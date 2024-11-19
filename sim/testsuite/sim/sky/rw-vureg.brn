@@ -1,0 +1,4 @@
+set c_files $srcdir/$subdir/rw-vureg.c
+set run_file rw-vureg.run
+set run_suffix ">& rw-vureg.out"
+lappend test_commands "diff $srcdir/$subdir/rw-vureg.vuexpect rw-vureg.out "

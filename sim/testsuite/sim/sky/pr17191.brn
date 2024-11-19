@@ -1,0 +1,5 @@
+set asm_files $srcdir/$subdir/pr17191.s
+set ld_flags "-nostdlib"
+set run_file pr17191.run
+set run_suffix ">& pr17191.out"
+lappend junk_files "pr17191.out"

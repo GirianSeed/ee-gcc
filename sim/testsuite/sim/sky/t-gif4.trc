@@ -1,0 +1,100 @@
+# t-gif4.trc: GIF Unit Test - Switching Paths -------------
+
+C t-gif4 - Test 1 - BEGIN
+#----------------------------------------------------------
+# 1. Verify that the arbiter chooses the correct path after
+#    the completion of the active path
+#
+# Scenario: Data on PATH1 no EOP  PATH1 active
+#	    Data on PATH2 no EOP  
+#           Data on PATH3    EOP
+#           Data on PATH2    EOP
+#           Data on PATH1    EOP->arbiter chooses PATH2
+#         			  arbiter chooses PATH3
+#----------------------------------------------------------
+# PATH1: GIF tag: Image mode, EOP = 0, nloop = 3
+2 0x00000000_00000000_08000000_00000003 0x00000000
+# PATH1: Data
+2 0x10000000_90000000_12345678_9abcdef0 0x00000000
+2 0x20000000_80000000_87654321_0fedcba9 0x00000000
+2 0x30000000_70000000_9876abcd_5432ef01 0x00000000
+
+# PATH2: GIF tag: Image mode, EOP = 0, nloop = 3
+3 0x00000000_00000000_08000000_00000003 0x00000000
+# PATH2: Data
+3 0x11111111_99999999_aaaaaaaa_bbbbbbbb 0x00000000
+3 0x22222222_88888888_cccccccc_dddddddd 0x00000000
+3 0x33333333_77777777_eeeeeeee_ffffffff 0x00000000
+
+# PATH3: GIF tag: Image mode, EOP = 1, nloop = 5
+4 0x00000000_00000000_08000000_00008005 0x00000000
+# PATH3: Data
+4 0x10101010_90909090_00000001_00000002 0x00000000
+4 0x20202020_08080808_00000003_00000004 0x00000000
+4 0x30303030_70707070_00000005_00000006 0x00000000
+4 0x40404040_a0a0a0a0_00000007_0000000b 0x00000000
+4 0x50505050_60606060_00000008_00000009 0x00000000
+
+# PATH2: GIF tag: Image mode, EOP = 1, nloop = 1
+3 0x00000000_00000000_08000000_00008001 0x00000000
+# PATH2: Data
+3 0xcccccccc_dddddddd_eeeeeeee_ffffffff 0x00000000
+
+# PATH1: GIF tag: Image mode, EOP = 1, nloop = 5
+2 0x00000000_00000000_08000000_00008005 0x00000000
+# PATH1: Data
+2 0x50500000_55000000_12345678_9abcdef0 0x00000000
+2 0x60600000_44000000_87654321_0fedcba9 0x00000000
+2 0x70700000_33000000_9876abcd_5432ef01 0x00000000
+2 0x80800000_22000000_98766666_7777ef01 0x00000000
+2 0x90900000_11000000_98761111_33333333 0x00000000
+C t-gif4 - Test 1 - END
+
+C t-gif4 - Test 2 - BEGIN
+#----------------------------------------------------------
+# 1. Verify that the arbiter chooses the correct path after
+#    the completion of the active path with PATH3 paused
+#
+# Scenario: Data on PATH3 EOP *paused* 
+#	    Data on PATH2 EOP 
+#           Reset   PATH3 
+#           Data on PATH1 EOP
+#      
+# Should see: PATH2 transfer
+#             PATH3 transfer
+#             PATH1 transfer
+#----------------------------------------------------------
+# Pause PATH3 by writing to GIF_MODE.M3R
+! 0xb0003010 0x00000001
+# READ GIF_STAT to make sure GIF_STAT.M3R is on
+? 0xb0003020 0x00000041 0xffffffff
+
+# PATH3: GIF tag: Image mode, EOP = 1, nloop = 5
+4 0x00000000_00000000_08000000_00008005 0x00000000
+# PATH3: Data
+4 0x10101010_90909090_00000001_00000002 0x00000000
+4 0x20202020_08080808_00000003_00000004 0x00000000
+4 0x30303030_70707070_00000005_00000006 0x00000000
+4 0x40404040_a0a0a0a0_00000007_0000000b 0x00000000
+4 0x50505050_60606060_00000008_00000009 0x00000000
+
+# PATH2: GIF tag: Image mode, EOP = 1, nloop = 3
+3 0x00000000_00000000_08000000_00008003 0x00000000
+# PATH2: Data
+3 0x11111111_99999999_aaaaaaaa_bbbbbbbb 0x00000000
+3 0x22222222_88888888_cccccccc_dddddddd 0x00000000
+3 0x33333333_77777777_eeeeeeee_ffffffff 0x00000000
+
+# Reset GIF_STAT.M3P by reseting the GIF_MODE register
+! 0xb0003010 0x00000000
+# READ GIF_STAT
+? 0xb0003020 0x00000000 0xffffffff
+
+# PATH1: GIF tag: Image mode, EOP = 1, nloop = 3
+2 0x00000000_00000000_08000000_00008003 0x00000000
+# PATH2: Data
+2 0x10000000_33333333_00000000_33333333 0x00000000
+2 0x10000000_22222222_00000000_22222222 0x00000000
+2 0x10000000_11111111_00000000_11111111 0x00000000
+
+C t-gif4 - Test 2 - END

@@ -1,0 +1,14 @@
+Start of execution...
+#  t-gs - Test 1 - register reads - BEGIN
+#  t-gs - Test 1 - register reads - END
+#  t-gs - Test 2 - register writes - BEGIN
+12000000 0003fd0000010000 
+12000070 0000000000004000 
+12000080 0010018000040080 
+12000090 0000000000014080 
+120000a0 0010018000080100 
+#  t-gs - Test 2 - register writes - END
+#  t-gs - Test 3 - error input - BEGIN
+12000090 0000000000014080 
+#  t-gs - Test 3 - error input - END
+End of execution. 0 FIFO quadwords, 9 pokes, 22 checks ok, 0 failed.

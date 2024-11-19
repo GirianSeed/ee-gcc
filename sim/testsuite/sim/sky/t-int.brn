@@ -1,0 +1,4 @@
+set c_files $srcdir/$subdir/t-int.c
+set asm_files $srcdir/$subdir/t-int-handler.s
+set run_file t-int.run
+set test_on_skyb_p 0

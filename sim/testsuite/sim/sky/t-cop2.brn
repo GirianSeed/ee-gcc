@@ -1,0 +1,13 @@
+set c_files $srcdir/$subdir/t-cop2main.c
+set asm_files $srcdir/$subdir/t-cop2.s
+set as_flags "-mcpu=r5900"
+set run_file t-cop2.run
+set run_suffix "> /tmp/t-cop2.out"
+set run_flags "--sky-debug=inst_trace"
+set timeout 500
+lappend test_commands "diff -btw $srcdir/$subdir/t-cop2.vuexpect /tmp/t-cop2.out > /tmp/t-cop2.dif "
+lappend incasefail_commands "mv /tmp/t-cop2.out t-cop2.out"
+lappend incasefail_commands "mv /tmp/t-cop2.dif t-cop2.dif"
+lappend junk_files "/tmp/t-cop2.out"
+lappend junk_files "/tmp/t-cop2.dif"
+set test_on_skyb_p 0

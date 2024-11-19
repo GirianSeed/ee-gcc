@@ -1,0 +1,9 @@
+set c_files $srcdir/$subdir/t-dma.c
+set run_file t-dma.run
+set timeout 300
+set run_suffix "> /tmp/t-dma.tmp "
+lappend test_commands "cat /tmp/t-dma.tmp | sed -e /not.quad.word.aligned/s/0x......./0xXXXXXXX/ > t-dma.out "
+lappend test_commands "diff $srcdir/$subdir/t-dma.dmaexpect t-dma.out"
+lappend junk_files "/tmp/t-dma.tmp"
+lappend junk_files "t-dma.out"
+set test_on_skyb_p 0

@@ -1,0 +1,3261 @@
+// -*- C -*-
+//
+// r5900 specific instructions.
+//
+// The r5900 has both a custom FPU (32bit non pure IEEE) and
+// a number of other interesting instructions.
+
+
+:function:::int:check_mult_hilo_hi1lo1:hilo_history *hi, hilo_history *lo, hilo_history *hi1, hilo_history *lo1
+*r5900:
+{
+  return (check_mult_hilo (SD_, hi, lo)
+	  && check_mult_hilo (SD_, hi1, lo1));
+}
+
+:function:::int:check_div_hilo_hi1lo1:hilo_history *hi, hilo_history *lo, hilo_history *hi1, hilo_history *lo1
+*r5900:
+{
+  return (check_div_hilo (SD_, hi, lo)
+	  && check_div_hilo (SD_, hi1, lo1));
+}
+
+
+
+011100,5.RS,5.RT,0000000000011010:MMINORM:::DIV1
+"div1 r<RS>, r<RT>"
+*r5900:
+{
+  signed32 n = GPR[RS];
+  signed32 d = GPR[RT];
+  check_div_hilo (SD_, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT2 (GPR[RS], GPR[RT]);
+  if (d == 0)
+    {
+      LO1 = EXTEND32 (0x80000000);
+      HI1 = EXTEND32 (0);
+    }
+  else if (n == SIGNED32 (0x80000000) && d == -1)
+    {
+      LO1 = EXTEND32 (0x80000000);
+      HI1 = EXTEND32 (0);
+    }
+  else
+    {
+      LO1 = EXTEND32 ((n / d));
+      HI1 = EXTEND32 ((n % d));
+    }
+  TRACE_ALU_RESULT2 (HI1, LO1);
+}
+
+
+011100,5.RS,5.RT,0000000000011011:MMINORM:::DIVU1
+"divu1 r<RS>, r<RT>"
+*r5900:
+{
+  unsigned32 d1 = GPR[RS];
+  unsigned32 d2 = GPR[RT];
+  check_div_hilo (SD_, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT2 (GPR[RS], GPR[RT]);
+  if (d2 == 0)
+    {
+      LO1 = EXTEND32 (0x80000000);
+      HI1 = EXTEND32 (0);
+    }
+  else
+    {
+      LO1 = EXTEND32 ((d1 / d2));
+      HI1 = EXTEND32 ((d1 % d2));
+    }
+  TRACE_ALU_RESULT2 (HI1, LO1);
+}
+
+
+011110,5.BASE,5.RT,16.OFFSET:NORMAL:::LQ
+"lq r<RT>, <OFFSET> (r<BASE>)"
+*r5900:
+{
+  address_word vaddr = (GPR[BASE] + EXTEND16 (OFFSET));
+  address_word paddr;
+  int uncached;
+  unsigned64 memval0;
+  unsigned64 memval1;
+  unsigned64 dummy;
+
+  vaddr &= ~0xf; /* mask off bottom 4 bits */
+
+  AddressTranslation (vaddr, isDATA, isLOAD, &paddr, &uncached, isTARGET, isREAL);
+  LoadMemory(&memval0,&dummy,uncached,AccessLength_DOUBLEWORD,paddr,vaddr,isDATA,isREAL);
+  LoadMemory(&memval1,&dummy,uncached,AccessLength_DOUBLEWORD,paddr+8,vaddr+8,isDATA,isREAL);
+
+  GPR[RT] = memval0;
+  GPR1[RT] = memval1;
+}
+
+
+// MADD see tx.igen
+
+
+// MADDU see tx.igen
+
+
+011100,5.RS,5.RT,5.RD,00000100000:MMINORM:::MADD1
+"madd1 r<RS>, r<RT>":RD == 0
+"madd1 r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  signed64 prod = (U8_4 (VL4_8 (HI1), VL4_8 (LO1))
+		   + ((signed64) EXTEND32 (GPR[RS])
+		      * (signed64) EXTEND32 (GPR[RT])));
+  check_mult_hilo (SD_, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT2 (GPR[RS], GPR[RT]);
+  LO1 = EXTEND32 (prod);
+  HI1 = EXTEND32 (VH4_8 (prod));
+  TRACE_ALU_RESULT2 (HI1, LO1);
+  if (RD != 0)
+    GPR[RD] = LO1;
+}
+
+
+011100,5.RS,5.RT,5.RD,00000100001:MMINORM:::MADDU1
+"maddu1 r<RS>, r<RT>":RD == 0
+"maddu1 r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned64 prod = (U8_4 (VL4_8 (HI1),VL4_8 (LO1))
+		     + ((unsigned64) VL4_8 (GPR[RS])
+			* (unsigned64) VL4_8 (GPR[RT])));
+  check_mult_hilo (SD_, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT2 (GPR[RS], GPR[RT]);
+  LO1 = EXTEND32 (prod);
+  HI1 = EXTEND32 (VH4_8 (prod));
+  TRACE_ALU_RESULT2 (HI1, LO1);
+  if (RD != 0)
+    GPR[RD] = LO1;
+}
+
+
+0111000000000000,5.RD,00000010000:MMINORM:::MFHI1
+"mfhi1 r<RD>"
+*r5900:
+{
+  check_mf_hilo (SD_, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT1 (HI1);
+  GPR[RD] = HI1;
+  TRACE_ALU_RESULT1 (GPR[RD]);
+}
+
+
+0111000000000000,5.RD,00000010010:MMINORM:::MFLO1
+"mflo1 r<RD>"
+*r5900:
+{
+  check_mf_hilo (SD_, LO1HISTORY, HI1HISTORY);
+  TRACE_ALU_INPUT1 (LO1);
+  GPR[RD] = LO1;
+  TRACE_ALU_RESULT1 (GPR[RD]);
+}
+
+
+0000000000000000,5.RD,00000101000:SPECIAL:::MFSA
+"mfsa r<RD>"
+*r5900:
+{
+  TRACE_ALU_INPUT1 (SA);
+  GPR[RD] = SA;
+  TRACE_ALU_RESULT1 (GPR[RD]);
+}
+
+
+011100,5.RS,000000000000000010001:MMINORM:::MTHI1
+"mthi1 r<RS>"
+*r5900:
+{
+  check_mt_hilo (SD_, HI1HISTORY);
+  TRACE_ALU_INPUT1 (GPR[RS]);
+  HI1 = GPR[RS];
+  TRACE_ALU_RESULT1 (HI1);
+}
+
+
+011100,5.RS,000000000000000010011:MMINORM:::MTLO1
+"mtlo1 r<RS>"
+*r5900:
+{
+  check_mt_hilo (SD_, LO1HISTORY);
+  TRACE_ALU_INPUT1 (GPR[RS]);
+  LO1 = GPR[RS];
+  TRACE_ALU_RESULT1 (LO1);
+}
+
+
+000000,5.RS,000000000000000101001:SPECIAL:::MTSA
+"mtsa r<RS>"
+*r5900:
+{
+  TRACE_ALU_INPUT1 (GPR[RS]);
+  SA = GPR[RS];
+  TRACE_ALU_RESULT1 (SA);
+}
+
+
+000001,5.RS,11000,16.IMMEDIATE:REGIMM:::MTSAB
+"mtsab r<RS>"
+*r5900:
+{
+  TRACE_ALU_INPUT1 (GPR[RS]);
+  SA = ((GPR[RS] & 0xF) ^ (IMMEDIATE & 0xF)) * 8;
+  TRACE_ALU_RESULT1 (SA);
+}
+
+
+000001,5.RS,11001,16.IMMEDIATE:REGIMM:::MTSAH
+"mtsah r<RS>"
+*r5900:
+{
+  TRACE_ALU_INPUT1 (GPR[RS]);
+  SA = ((GPR[RS] & 0x7) ^ (IMMEDIATE & 0x7)) * 16;
+  TRACE_ALU_RESULT1 (SA);
+}
+
+
+011100,5.RS,5.RT,5.RD,00000011000:MMINORM:::MULT1
+"mult1 r<RS>, r<RT>":RD == 0
+"mult1 r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned64 temp = ((signed64)(GPR[RS] & 0xffffffff) * (signed64)(GPR[RT] & 0xffffffff));
+  check_mult_hilo (SD_, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT2 (GPR[RS], GPR[RT]);
+  LO1 = EXTEND32 (VL4_8 (temp));
+  HI1 = EXTEND32 (VH4_8 (temp));
+  TRACE_ALU_RESULT2 (HI1, LO1);
+  if (RD != 0)
+    GPR[RD] = LO1;
+}
+
+
+011100,5.RS,5.RT,5.RD,00000011001:MMINORM:::MULTU1
+"multu1 r<RS>, r<RT>":RD == 0
+"multu1 r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned64 temp = ((unsigned64)(GPR[RS] & 0xffffffff) * (unsigned64)(GPR[RT] & 0xffffffff));
+  check_mult_hilo (SD_, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT2 (GPR[RS], GPR[RT]);
+  LO1 = EXTEND32 (VL4_8 (temp));
+  HI1 = EXTEND32 (VH4_8 (temp));
+  TRACE_ALU_RESULT2 (HI1, LO1);
+  if (RD != 0)
+    GPR[RD] = LO1;
+}
+
+
+01110000000,5.RT,5.RD,00101101000:MMI1:::PABSH
+"pabsh r<RD>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SH (RT, i) >= 0)
+	TMP_SH (i) =  GPR_SH (RT, i);
+      else if (GPR_SH (RT, i) == -32768)
+	TMP_SH (i) = 32767;
+      else
+	TMP_SH (i) = -GPR_SH (RT, i);
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,00001101000:MMI1:::PABSW
+"pabsw r<RD>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SW (RT, i) >= 0)
+	TMP_SW (i) =  GPR_SW (RT, i);
+      else if (GPR_SW (RT, i) == (int)0x80000000)
+	TMP_SW (i) = (int)0x7FFFFFFF;
+      else
+	TMP_SW (i) = -GPR_SW (RT, i);
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01000001000:MMI0:::PADDB
+"paddb r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < BYTES_IN_MMI_REGS; i++)
+    {
+      int s = GPR_SB (RS, i);
+      int t = GPR_SB (RT, i);
+      int r = s + t;
+      TMP_SB (i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00100001000:MMI0:::PADDH
+"paddh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < HALFWORDS_IN_MMI_REGS; i++)
+    {
+      int s = GPR_SH (RS, i);
+      int t = GPR_SH (RT, i);
+      int r = s + t;
+      TMP_SH(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00000001000:MMI0:::PADDW
+"paddw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < WORDS_IN_MMI_REGS; i++)
+    {
+      signed64 s = GPR_SW (RS, i);
+      signed64 t = GPR_SW (RT, i);
+      signed64 r = s + t;
+      TMP_SW (i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,11000001000:MMI0:::PADDSB
+"paddsb r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < BYTES_IN_MMI_REGS; i++)
+    {
+      int s = GPR_SB (RS, i);
+      int t = GPR_SB (RT, i);
+      int r = s + t;
+      if (r > 127)
+	TMP_SB(i) = 127;
+      else if (r < -128)
+	TMP_SB(i) = -128;
+      else
+	TMP_SB(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10100001000:MMI0:::PADDSH
+"paddsh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < HALFWORDS_IN_MMI_REGS; i++)
+    {
+      int s = GPR_SH (RS, i);
+      int t = GPR_SH (RT, i);
+      int r = s + t;
+      if (r > 32767)
+	TMP_SH(i) = 32767;
+      else if (r < -32768)
+	TMP_SH(i) = -32768;
+      else
+	TMP_SH(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10000001000:MMI0:::PADDSW
+"paddsw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < WORDS_IN_MMI_REGS; i++)
+    {
+      signed64 s = GPR_SW (RS, i);
+      signed64 t = GPR_SW (RT, i);
+      signed64 r = s + t;
+      if (r > (int)0x7FFFFFFF)
+	TMP_SW (i) = (int)0x7FFFFFFF;
+      else if (r < (int)0x80000000)
+	TMP_SW (i) = (int)0x80000000;
+      else
+	TMP_SW (i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,11000101000:MMI1:::PADDUB
+"paddub r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < BYTES_IN_MMI_REGS; i++)
+    {
+      unsigned int s = GPR_UB (RS, i);
+      unsigned int t = GPR_UB (RT, i);
+      unsigned int r = s + t;
+      if (r > 0xFF)
+	TMP_UB(i) = 0xFF;
+      else
+	TMP_UB(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10100101000:MMI1:::PADDUH
+"padduh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < HALFWORDS_IN_MMI_REGS; i++)
+    {
+      unsigned int s = GPR_UH (RS, i);
+      unsigned int t = GPR_UH (RT, i);
+      unsigned int r = s + t;
+      if (r > 0xFFFF)
+	TMP_UH(i) = 0xFFFF;
+      else
+	TMP_UH(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10000101000:MMI1:::PADDUW
+"padduw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < WORDS_IN_MMI_REGS; i++)
+    {
+      unsigned64 s = GPR_UW (RS, i);
+      unsigned64 t = GPR_UW (RT, i);
+      unsigned64 r = s + t;
+      if (r > 0xFFFFFFFF)
+	TMP_UW (i) = 0xFFFFFFFF;
+      else
+	TMP_UW (i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00100101000:MMI1:::PADSBH
+"padsbh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS/2;i++)
+    TMP_SH(i) = GPR_SH (RS, i) - GPR_SH (RT, i);
+  for(;i<HALFWORDS_IN_MMI_REGS;i++)
+    TMP_SH(i) = GPR_SH (RS, i) + GPR_SH (RT, i);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10010001001:MMI2:::PAND
+"pand r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    TMP_UW (i) = (GPR_UW (RS, i) & GPR_UW (RT, i));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01010101000:MMI1:::PCEQB
+"pceqb r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<BYTES_IN_MMI_REGS;i++)
+    {
+      if (GPR_SB (RS, i) == GPR_SB (RT, i)) TMP_SB(i) = 0xFF;
+      else                      TMP_SB(i) = 0;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00110101000:MMI1:::PCEQH
+"pceqh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SH (RS, i) == GPR_SH (RT, i)) TMP_SH(i) = 0xFFFF;
+      else                      TMP_SH(i) = 0;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00010101000:MMI1:::PCEQW
+"pceqw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SW (RS, i) == GPR_SW (RT, i)) TMP_SW (i) = 0xFFFFFFFF;
+      else                      TMP_SW (i) = 0;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01010001000:MMI0:::PCGTB
+"pcgtb r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<BYTES_IN_MMI_REGS;i++)
+    {
+      if (GPR_SB (RS, i) > GPR_SB (RT, i)) TMP_SB(i) = 0xFF;
+      else                     TMP_SB(i) = 0;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00110001000:MMI0:::PCGTH
+"pcgth r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SH (RS, i) > GPR_SH (RT, i)) TMP_SH(i) = 0xFFFF;
+      else                     TMP_SH(i) = 0;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00010001000:MMI0:::PCGTW
+"pcgtw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SW (RS, i) > GPR_SW (RT, i)) TMP_SW (i) = 0xFFFFFFFF;
+      else                     TMP_SW (i) = 0;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,11011101001:MMI3:::PCPYH
+"pcpyh r<RD>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  TMP_UH (7) = TMP_UH (6) = TMP_UH (5) = TMP_UH (4) = GPR_UH (RT, 4);
+  TMP_UH (3) = TMP_UH (2) = TMP_UH (1) = TMP_UH (0) = GPR_UH (RT, 0);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01110001001:MMI2:::PCPYLD
+"pcpyld r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  signed_word rs_reg = GPR[RS];
+  signed_word rs_reg1 = GPR1[RS];
+  signed_word rt_reg = GPR[RT];
+  signed_word rt_reg1 = GPR1[RT];
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UD (0) = RT_UD(0);
+  TMP_UD (1) = RS_UD(0);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01110101001:MMI3:::PCPYUD
+"pcpyud r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  signed_word rs_reg = GPR[RS];
+  signed_word rs_reg1 = GPR1[RS];
+  signed_word rt_reg = GPR[RT];
+  signed_word rt_reg1 = GPR1[RT];
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UD (0) = RS_UD(1);
+  TMP_UD (1) = RT_UD(1);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,0000011101001001:MMI2:::PDIVBW
+"pdivbw r<RS>, r<RT>"
+*r5900:
+{
+  signed32 devisor = GPR_SH (RT, 0);
+  check_div_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  if (devisor == -1)
+    {
+      LO_SW(0) = -GPR_SW (RS, 0);
+      HI_SW(0) = 0;
+      LO_SW(1) = -GPR_SW (RS, 1);
+      HI_SW(1) = 0;
+      LO_SW(2) = -GPR_SW (RS, 2);
+      HI_SW(2) = 0;
+      LO_SW(3) = -GPR_SW (RS, 3);
+      HI_SW(3) = 0;
+    }
+  else if (devisor != 0)
+    {
+      LO_SW(0) = GPR_SW (RS, 0) / devisor;
+      HI_SW(0) = EXTEND16 ((GPR_SW (RS, 0) % devisor));
+      LO_SW(1) = GPR_SW (RS, 1) / devisor;
+      HI_SW(1) = EXTEND16 ((GPR_SW (RS, 1) % devisor));
+      LO_SW(2) = GPR_SW (RS, 2) / devisor;
+      HI_SW(2) = EXTEND16 ((GPR_SW (RS, 2) % devisor));
+      LO_SW(3) = GPR_SW (RS, 3) / devisor;
+      HI_SW(3) = EXTEND16 ((GPR_SW (RS, 3) % devisor));
+    }
+  TRACE_ALU_RESULT2 (HI, LO);
+}
+
+
+011100,5.RS,5.RT,0000001101101001:MMI3:::PDIVUW
+"pdivuw r<RS>, r<RT>"
+*r5900:
+{
+  check_div_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  if (GPR_UW (RT, 0) != 0)
+    {
+      LO  = (signed32)(GPR_UW (RS, 0) / GPR_UW (RT, 0));
+      HI  = (signed32)(GPR_UW (RS, 0) % GPR_UW (RT, 0));
+    }
+  if (GPR_UW (RT, 2) != 0)
+    {
+      LO1 = (signed32)(GPR_UW (RS, 2) / GPR_UW (RT, 2));
+      HI1 = (signed32)(GPR_UW (RS, 2) % GPR_UW (RT, 2));
+    }
+  TRACE_ALU_RESULT4 (HI1, HI, LO1, LO);
+}
+
+
+011100,5.RS,5.RT,0000001101001001:MMI2:::PDIVW
+"pdivw r<RS>, r<RT>"
+*r5900:
+{
+  check_div_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  if (GPR_SW (RT, 0) == -1)
+    {
+      LO  = -GPR_SW (RS, 0);
+      HI  = 0;
+    }
+  else if (GPR_UW (RT, 0) != 0)
+    {
+      LO  = (signed32)(GPR_SW (RS, 0) / GPR_SW (RT, 0));
+      HI  = (signed32)(GPR_SW (RS, 0) % GPR_SW (RT, 0));
+    }
+  if (GPR_SW (RT, 2) == -1)
+    {
+      LO1 = -GPR_SW (RS, 2);
+      HI1 = 0;
+    }
+  else if (GPR_UW (RT, 2) != 0)
+    {
+      LO1 = (signed32)(GPR_SW (RS, 2) / GPR_SW (RT, 2));
+      HI1 = (signed32)(GPR_SW (RS, 2) % GPR_SW (RT, 2));
+    }
+  TRACE_ALU_RESULT4 (HI1, HI, LO1, LO);
+}
+
+
+01110000000,5.RT,5.RD,11010101001:MMI3:::PEXCH
+"pexch r<RD>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  TMP_UH (0) = GPR_UH (RT, 0);
+  TMP_UH (1) = GPR_UH (RT, 2);
+  TMP_UH (2) = GPR_UH (RT, 1);
+  TMP_UH (3) = GPR_UH (RT, 3);
+  TMP_UH (4) = GPR_UH (RT, 4);
+  TMP_UH (5) = GPR_UH (RT, 6);
+  TMP_UH (6) = GPR_UH (RT, 5);
+  TMP_UH (7) = GPR_UH (RT, 7);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,11110101001:MMI3:::PEXCW
+"pexcw r<RD>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  TMP_UW (0) = GPR_UW (RT, 0);
+  TMP_UW (1) = GPR_UW (RT, 2);
+  TMP_UW (2) = GPR_UW (RT, 1);
+  TMP_UW (3) = GPR_UW (RT, 3);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,11010001001:MMI2:::PEXOH
+"pexoh r<RD>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  TMP_UH (0) = GPR_UH (RT, 2);
+  TMP_UH (1) = GPR_UH (RT, 1);
+  TMP_UH (2) = GPR_UH (RT, 0);
+  TMP_UH (3) = GPR_UH (RT, 3);
+  TMP_UH (4) = GPR_UH (RT, 6);
+  TMP_UH (5) = GPR_UH (RT, 5);
+  TMP_UH (6) = GPR_UH (RT, 4);
+  TMP_UH (7) = GPR_UH (RT, 7);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,11110001001:MMI2:::PEXOW
+"pexow r<RD>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  TMP_UW (0) = GPR_UW (RT, 2);
+  TMP_UW (1) = GPR_UW (RT, 1);
+  TMP_UW (2) = GPR_UW (RT, 0);
+  TMP_UW (3) = GPR_UW (RT, 3);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,11110001000:MMI0:::PEXT5
+"pext5 r<RD>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    {
+      unsigned32 x = GPR_UW (RT, i);
+      TMP_UW (i) = ((x & (1  << 15)) << (31 - 15))  
+	| ((x & (31 << 10)) << (19 - 10))  
+	| ((x & (31 << 5))  << (11 - 5))   
+	| ((x & (31 << 0))  << (3  - 0));  
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,11010001000:MMI0:::PEXTLB
+"pextlb r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UB (0)  = GPR_UB (RT, 0);
+  TMP_UB (1)  = GPR_UB (RS, 0);
+  TMP_UB (2)  = GPR_UB (RT, 1);
+  TMP_UB (3)  = GPR_UB (RS, 1);
+  TMP_UB (4)  = GPR_UB (RT, 2);
+  TMP_UB (5)  = GPR_UB (RS, 2);
+  TMP_UB (6)  = GPR_UB (RT, 3);
+  TMP_UB (7)  = GPR_UB (RS, 3);
+  TMP_UB (8)  = GPR_UB (RT, 4);
+  TMP_UB (9)  = GPR_UB (RS, 4);
+  TMP_UB (10) = GPR_UB (RT, 5);
+  TMP_UB (11) = GPR_UB (RS, 5);
+  TMP_UB (12) = GPR_UB (RT, 6);
+  TMP_UB (13) = GPR_UB (RS, 6);
+  TMP_UB (14) = GPR_UB (RT, 7);
+  TMP_UB (15) = GPR_UB (RS, 7);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10110001000:MMI0:::PEXTLH
+"pextlh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UH (0)  = GPR_UH (RT, 0);
+  TMP_UH (1)  = GPR_UH (RS, 0);
+  TMP_UH (2)  = GPR_UH (RT, 1);
+  TMP_UH (3)  = GPR_UH (RS, 1);
+  TMP_UH (4)  = GPR_UH (RT, 2);
+  TMP_UH (5)  = GPR_UH (RS, 2);
+  TMP_UH (6)  = GPR_UH (RT, 3);
+  TMP_UH (7)  = GPR_UH (RS, 3);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10010001000:MMI0:::PEXTLW
+"pextlw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UW (0)  = GPR_UW (RT, 0);
+  TMP_UW (1)  = GPR_UW (RS, 0);
+  TMP_UW (2)  = GPR_UW (RT, 1);
+  TMP_UW (3)  = GPR_UW (RS, 1);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,11010101000:MMI1:::PEXTUB
+"pextub r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UB (0)  = GPR_UB (RT, 8);
+  TMP_UB (1)  = GPR_UB (RS, 8);
+  TMP_UB (2)  = GPR_UB (RT, 9);
+  TMP_UB (3)  = GPR_UB (RS, 9);
+  TMP_UB (4)  = GPR_UB (RT, 10);
+  TMP_UB (5)  = GPR_UB (RS, 10);
+  TMP_UB (6)  = GPR_UB (RT, 11);
+  TMP_UB (7)  = GPR_UB (RS, 11);
+  TMP_UB (8)  = GPR_UB (RT, 12);
+  TMP_UB (9)  = GPR_UB (RS, 12);
+  TMP_UB (10) = GPR_UB (RT, 13);
+  TMP_UB (11) = GPR_UB (RS, 13);
+  TMP_UB (12) = GPR_UB (RT, 14);
+  TMP_UB (13) = GPR_UB (RS, 14);
+  TMP_UB (14) = GPR_UB (RT, 15);
+  TMP_UB (15) = GPR_UB (RS, 15);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10110101000:MMI1:::PEXTUH
+"pextuh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UH (0)  = GPR_UH (RT, 4);
+  TMP_UH (1)  = GPR_UH (RS, 4);
+  TMP_UH (2)  = GPR_UH (RT, 5);
+  TMP_UH (3)  = GPR_UH (RS, 5);
+  TMP_UH (4)  = GPR_UH (RT, 6);
+  TMP_UH (5)  = GPR_UH (RS, 6);
+  TMP_UH (6)  = GPR_UH (RT, 7);
+  TMP_UH (7)  = GPR_UH (RS, 7);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10010101000:MMI1:::PEXTUW
+"pextuw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UW (0)  = GPR_UW (RT, 2);
+  TMP_UW (1)  = GPR_UW (RS, 2);
+  TMP_UW (2)  = GPR_UW (RT, 3);
+  TMP_UW (3)  = GPR_UW (RS, 3);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10001001001:MMI2:::PHMADDH
+"phmaddh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_SW (0) = LO_SW(0) = (GPR_SH (RS, 1) * GPR_SH (RT, 1)) + (GPR_SH (RS, 0) * GPR_SH (RT, 0));
+  TMP_SW (1) = HI_SW(0) = (GPR_SH (RS, 3) * GPR_SH (RT, 3)) + (GPR_SH (RS, 2) * GPR_SH (RT, 2));
+  TMP_SW (2) = LO_SW(2) = (GPR_SH (RS, 5) * GPR_SH (RT, 5)) + (GPR_SH (RS, 4) * GPR_SH (RT, 4));
+  TMP_SW (3) = HI_SW(2) = (GPR_SH (RS, 7) * GPR_SH (RT, 7)) + (GPR_SH (RS, 6) * GPR_SH (RT, 6));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10101001001:MMI2:::PHMSUBH
+"phmsubh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_SW (0) = LO_SW(0) = (GPR_SH (RS, 1) * GPR_SH (RT, 1)) - (GPR_SH (RS, 0) * GPR_SH (RT, 0));
+  TMP_SW (1) = HI_SW(0) = (GPR_SH (RS, 3) * GPR_SH (RT, 3)) - (GPR_SH (RS, 2) * GPR_SH (RT, 2));
+  TMP_SW (2) = LO_SW(2) = (GPR_SH (RS, 5) * GPR_SH (RT, 5)) - (GPR_SH (RS, 4) * GPR_SH (RT, 4));
+  TMP_SW (3) = HI_SW(2) = (GPR_SH (RS, 7) * GPR_SH (RT, 7)) - (GPR_SH (RS, 6) * GPR_SH (RT, 6));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01010001001:MMI2:::PINTH
+"pinth r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UH (0)  = GPR_UH (RT, 0);
+  TMP_UH (1)  = GPR_UH (RS, 4);
+  TMP_UH (2)  = GPR_UH (RT, 1);
+  TMP_UH (3)  = GPR_UH (RS, 5);
+  TMP_UH (4)  = GPR_UH (RT, 2);
+  TMP_UH (5)  = GPR_UH (RS, 6);
+  TMP_UH (6)  = GPR_UH (RT, 3);
+  TMP_UH (7)  = GPR_UH (RS, 7);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01010101001:MMI3:::PINTOH
+"pintoh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UH (0) = GPR_UH (RT, 0);
+  TMP_UH (1) = GPR_UH (RS, 0);
+  TMP_UH (2) = GPR_UH (RT, 2);
+  TMP_UH (3) = GPR_UH (RS, 2);
+  TMP_UH (4) = GPR_UH (RT, 4);
+  TMP_UH (5) = GPR_UH (RS, 4);
+  TMP_UH (6) = GPR_UH (RT, 6);
+  TMP_UH (7) = GPR_UH (RS, 6);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,00000,5.RD,00000000100:MMINORM:::PLZCW
+"plzcw r<RD>, r<RS>"
+*r5900:
+{
+  unsigned long value;
+  int test;
+  int count;
+  int i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RS], GPR[RS]);
+  value = GPR_UW (RS, 0);
+  count = 0;
+  test = !!(value & (1 << 31));
+  for(i=30; i>=0 && (test == !!(value & (1 << i))); i--)
+    count++;
+  TMP_UW (0) = count;
+  value = GPR_UW (RS, 1);
+  count = 0;
+  test = !!(value & (1 << 31));
+  for(i=30; i>=0 && (test == !!(value & (1 << i))); i--)
+    count++;
+  TMP_UW (1) = count;
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10000001001:MMI2:::PMADDH
+"pmaddh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_SW (0) = LO_SW(0) += (GPR_SH (RS, 0) * GPR_SH (RT, 0));
+  LO_SW(1) += (GPR_SH (RS, 1) * GPR_SH (RT, 1));
+  TMP_SW (1) = HI_SW(0) += (GPR_SH (RS, 2) * GPR_SH (RT, 2));
+  HI_SW(1) += (GPR_SH (RS, 3) * GPR_SH (RT, 3));
+  TMP_SW (2) = LO_SW(2) += (GPR_SH (RS, 4) * GPR_SH (RT, 4));
+  LO_SW(3) += (GPR_SH (RS, 5) * GPR_SH (RT, 5));
+  TMP_SW (3) = HI_SW(2) += (GPR_SH (RS, 6) * GPR_SH (RT, 6));
+  HI_SW(3) += (GPR_SH (RS, 7) * GPR_SH (RT, 7));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00000101001:MMI3:::PMADDUW
+"pmadduw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned64 sum0 = U8_4 (HI_SW(0), LO_SW(0));
+  unsigned64 sum1 = U8_4 (HI_SW(2), LO_SW(2));
+  unsigned64 prod0 = (unsigned64)GPR_UW (RS, 0) * (unsigned64)GPR_UW (RT, 0);
+  unsigned64 prod1 = (unsigned64)GPR_UW (RS, 2) * (unsigned64)GPR_UW (RT, 2);
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  sum0 += prod0;
+  sum1 += prod1;
+  TMP_UD (0) = sum0;
+  TMP_UD (1) = sum1;
+  LO  = EXTEND32 (sum0);
+  HI  = EXTEND32 (VH4_8 (sum0));
+  LO1 = EXTEND32 (sum1);
+  HI1 = EXTEND32 (VH4_8 (sum1));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00000001001:MMI2:::PMADDW
+"pmaddw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  signed64 sum0 = WORD64(HI_SW(0), LO_SW(0));
+  signed64 sum1 = WORD64(HI_SW(2), LO_SW(2));
+  signed64 prod0 = (signed64)GPR_SW (RS, 0) * (signed64)GPR_SW (RT, 0);
+  signed64 prod1 = (signed64)GPR_SW (RS, 2) * (signed64)GPR_SW (RT, 2);
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  sum0 += prod0;
+  sum1 += prod1;
+  TMP_SD (0) = sum0;
+  TMP_SD (1) = sum1;
+  LO  = EXTEND32 (sum0);
+  HI  = EXTEND32 (VH4_8 (sum0));
+  LO1 = EXTEND32 (sum1);
+  HI1 = EXTEND32 (VH4_8 (sum1));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00111001000:MMI0:::PMAXH
+"pmaxh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SH (RS, i) > GPR_SH (RT, i)) TMP_SH(i) = GPR_SH (RS, i);
+      else                     TMP_SH(i) = GPR_SH (RT, i);
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00011001000:MMI0:::PMAXW
+"pmaxw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SW (RS, i) > GPR_SW (RT, i)) TMP_SW (i) = GPR_SW (RS, i);
+      else                     TMP_SW (i) = GPR_SW (RT, i);
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+0111000000000000,5.RD,01000001001:MMI2:::PMFHI
+"pmfhi r<RD>"
+*r5900:
+{
+  TMP_DCL;
+  if (check_mf_hilo (SD_, HIHISTORY, LOHISTORY)
+      && check_mf_hilo (SD_, HI1HISTORY, LO1HISTORY)) /*NOP*/;
+  TRACE_ALU_INPUT2 (HI1, HI);
+  TMP_SD (0) = HI;
+  TMP_SD (1) = HI1;
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+0111000000000000,5.RD,01001001001:MMI2:::PMFLO
+"pmflo r<RD>"
+*r5900:
+{
+  TMP_DCL;
+  if (check_mf_hilo (SD_, LOHISTORY, HIHISTORY)
+      && check_mf_hilo (SD_, LO1HISTORY, HI1HISTORY)) /*NOP*/;
+  TRACE_ALU_INPUT2 (LO1, LO);
+  TMP_SD (0) = LO;
+  TMP_SD (1) = LO1;
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+0111000000000000,5.RD,5.SHIFT,110000:MMINORM:::PMFHL
+"pmfhl r<RD>"
+*r5900:
+{
+  TMP_DCL;
+  if (check_mf_hilo (SD_, HIHISTORY, LOHISTORY)
+      && check_mf_hilo (SD_, HI1HISTORY, LO1HISTORY)
+      && check_mf_hilo (SD_, LOHISTORY, HIHISTORY)
+      && check_mf_hilo (SD_, LO1HISTORY, HI1HISTORY)) /*NOP*/;
+  TRACE_ALU_INPUT4 (HI1, HI, LO1, LO);
+  if (SHIFT == 0)
+    {
+      TMP_UW (0) = LO_UW(0);
+      TMP_UW (1) = HI_UW(0);
+      TMP_UW (2) = LO_UW(2);
+      TMP_UW (3) = HI_UW(2);
+    }
+  else if (SHIFT == 1)
+    {
+      TMP_UW (0) = LO_UW(1);
+      TMP_UW (1) = HI_UW(1);
+      TMP_UW (2) = LO_UW(3);
+      TMP_UW (3) = HI_UW(3);
+    }
+  else if (SHIFT == 2)
+    {
+      /* NOTE: This code implements a saturate according to the
+	 figure on page B-115 and not according to the
+	 definition on page B-113 */
+      signed64 t = ((unsigned64)HI_UW(0) << 32) | (unsigned64)LO_UW(0);
+      signed64 u = ((unsigned64)HI_UW(2) << 32) | (unsigned64)LO_UW(2);
+      if (t > SIGNED64 (0x000000007FFFFFFF))
+	TMP_SD (0) = SIGNED64 (0x000000007FFFFFFF);
+      else if (t < - SIGNED64 (0x0000000080000000))
+	TMP_SD (0) = - SIGNED64 (0x0000000080000000);
+      else
+	TMP_SD (0) = t;
+      if (u > SIGNED64 (0x000000007FFFFFFF))
+	TMP_SD (1) = SIGNED64 (0x000000007FFFFFFF);
+      else if (u < - SIGNED64 (0x0000000080000000))
+	TMP_SD (1) = - SIGNED64 (0x0000000080000000);
+      else
+	TMP_SD (1) = u;
+    }
+  else if (SHIFT == 3)
+    {
+      TMP_UH (0) = LO_UH(0);
+      TMP_UH (1) = LO_UH(2);
+      TMP_UH (2) = HI_UH(0);
+      TMP_UH (3) = HI_UH(2);
+      TMP_UH (4) = LO_UH(4);
+      TMP_UH (5) = LO_UH(6);
+      TMP_UH (6) = HI_UH(4);
+      TMP_UH (7) = HI_UH(6);
+    }
+  else if (SHIFT == 4)
+    {
+      if (LO_SW(0) > 0x7FFF)
+	TMP_UH (0) = 0x7FFF;
+      else if (LO_SW(0) < -0x8000)
+	TMP_UH (0) = 0x8000;
+      else
+	TMP_UH (0) = LO_UH(0);
+      if (LO_SW(1) > 0x7FFF)
+	TMP_UH (1) = 0x7FFF;
+      else if (LO_SW(1) < -0x8000)
+	TMP_UH (1) = 0x8000;
+      else
+	TMP_UH (1) = LO_UH(2);
+      if (HI_SW(0) > 0x7FFF)
+	TMP_UH (2) = 0x7FFF;
+      else if (HI_SW(0) < -0x8000)
+	TMP_UH (2) = 0x8000;
+      else
+	TMP_UH (2) = HI_UH(0);
+      if (HI_SW(1) > 0x7FFF)
+	TMP_UH (3) = 0x7FFF;
+      else if (HI_SW(1) < -0x8000)
+	TMP_UH (3) = 0x8000;
+      else
+	TMP_UH (3) = HI_UH(2);
+      if (LO_SW(2) > 0x7FFF)
+	TMP_UH (4) = 0x7FFF;
+      else if (LO_SW(2) < -0x8000)
+	TMP_UH (4) = 0x8000;
+      else
+	TMP_UH (4) = LO_UH(4);
+      if (LO_SW(3) > 0x7FFF)
+	TMP_UH (5) = 0x7FFF;
+      else if (LO_SW(3) < -0x8000)
+	TMP_UH (5) = 0x8000;
+      else
+	TMP_UH (5) = LO_UH(6);
+      if (HI_SW(2) > 0x7FFF)
+	TMP_UH (6) = 0x7FFF;
+      else if (HI_SW(2) < -0x8000)
+	TMP_UH (6) = 0x8000;
+      else
+	TMP_UH (6) = HI_UH(4);
+      if (HI_SW(3) > 0x7FFF)
+	TMP_UH (7) = 0x7FFF;
+      else if (HI_SW(3) < -0x8000)
+	TMP_UH (7) = 0x8000;
+      else
+	TMP_UH (7) = HI_UH(6);
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00111101000:MMI1:::PMINH
+"pminh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SH (RS, i) < GPR_SH (RT, i)) TMP_SH(i) = GPR_SH (RS, i);
+      else                     TMP_SH(i) = GPR_SH (RT, i);
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00011101000:MMI1:::PMINW
+"pminw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    {
+      if (GPR_SW (RS, i) < GPR_SW (RT, i)) TMP_SW (i) = GPR_SW (RS, i);
+      else                     TMP_SW (i) = GPR_SW (RT, i);
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10100001001:MMI2:::PMSUBH
+"pmsubh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_SW (0) = LO_SW(0) -= (GPR_SH (RS, 0) * GPR_SH (RT, 0));
+  LO_SW(1) -= (GPR_SH (RS, 1) * GPR_SH (RT, 1));
+  TMP_SW (1) = HI_SW(0) -= (GPR_SH (RS, 2) * GPR_SH (RT, 2));
+  HI_SW(1) -= (GPR_SH (RS, 3) * GPR_SH (RT, 3));
+  TMP_SW (2) = LO_SW(2) -= (GPR_SH (RS, 4) * GPR_SH (RT, 4));
+  LO_SW(3) -= (GPR_SH (RS, 5) * GPR_SH (RT, 5));
+  TMP_SW (3) = HI_SW(2) -= (GPR_SH (RS, 6) * GPR_SH (RT, 6));
+  HI_SW(3) -= (GPR_SH (RS, 7) * GPR_SH (RT, 7));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00100001001:MMI2:::PMSUBW
+"pmsubw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  signed64 sum0 = WORD64(HI_SW(0), LO_SW(0));
+  signed64 sum1 = WORD64(HI_SW(2), LO_SW(2));
+  signed64 prod0 = (signed64)GPR_SW (RS, 0) * (signed64)GPR_SW (RT, 0);
+  signed64 prod1 = (signed64)GPR_SW (RS, 2) * (signed64)GPR_SW (RT, 2);
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  sum0 -= prod0;
+  sum1 -= prod1;
+  TMP_SD (0) = sum0;
+  TMP_SD (1) = sum1;
+  LO  = EXTEND32 (sum0);
+  HI  = EXTEND32 (VH4_8 (sum0));
+  LO1 = EXTEND32 (sum1);
+  HI1 = EXTEND32 (VH4_8 (sum1));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,000000000001000101001:MMI3:::PMTHI
+"pmthi r<RS>"
+*r5900:
+{
+  signed_word rs_reg = GPR[RS];
+  signed_word rs_reg1 = GPR1[RS];
+  if (check_mt_hilo (SD_, HIHISTORY)
+      && check_mt_hilo (SD_, HI1HISTORY)) /*NOP*/;
+  TRACE_ALU_INPUT2 (GPR1[RS], GPR[RS]);
+  HI  = RS_SD(0);
+  HI1 = RS_SD(1);
+  TRACE_ALU_RESULT2 (HI1, HI);
+}
+
+
+011100,5.RS,000000000001001101001:MMI3:::PMTLO
+"pmtlo r<RS>"
+*r5900:
+{
+  signed_word rs_reg = GPR[RS];
+  signed_word rs_reg1 = GPR1[RS];
+  if (check_mt_hilo (SD_, LOHISTORY)
+      && check_mt_hilo (SD_, LO1HISTORY)) /*NOP*/;
+  TRACE_ALU_INPUT2 (GPR1[RS], GPR[RS]);
+  LO  = RS_SD(0);
+  LO1 = RS_SD(1);
+  TRACE_ALU_RESULT2 (LO1, LO);
+}
+
+
+011100,5.RS,000000000000000110001:MMINORM:::PMTHL.LW
+"pmthl.lw r<RS>"
+*r5900:
+{
+  if (check_mt_hilo (SD_, HIHISTORY)
+      && check_mt_hilo (SD_, HI1HISTORY)
+      && check_mt_hilo (SD_, LOHISTORY)
+      && check_mt_hilo (SD_, LO1HISTORY)) /*NOP*/;
+  TRACE_ALU_INPUT2 (GPR1[RS], GPR[RS]);
+  LO_UW(0) = GPR_UW (RS, 0);
+  HI_UW(0) = GPR_UW (RS, 1);
+  LO_UW(2) = GPR_UW (RS, 2);
+  HI_UW(2) = GPR_UW (RS, 3);
+  TRACE_ALU_RESULT2 (HI, LO);
+}
+
+
+011100,5.RS,5.RT,5.RD,11100001001:MMI2:::PMULTH
+"pmulth r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_SW (0) = LO_SW(0) = (GPR_SH (RS, 0) * GPR_SH (RT, 0));
+  LO_SW(1) = (GPR_SH (RS, 1) * GPR_SH (RT, 1));
+  TMP_SW (1) = HI_SW(0) = (GPR_SH (RS, 2) * GPR_SH (RT, 2));
+  HI_SW(1) = (GPR_SH (RS, 3) * GPR_SH (RT, 3));
+  TMP_SW (2) = LO_SW(2) = (GPR_SH (RS, 4) * GPR_SH (RT, 4));
+  LO_SW(3) = (GPR_SH (RS, 5) * GPR_SH (RT, 5));
+  TMP_SW (3) = HI_SW(2) = (GPR_SH (RS, 6) * GPR_SH (RT, 6));
+  HI_SW(3) = (GPR_SH (RS, 7) * GPR_SH (RT, 7));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01100101001:MMI3:::PMULTUW
+"pmultuw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned64 sum0 = 0;
+  unsigned64 sum1 = 0;
+  unsigned64 prod0 = (unsigned64)GPR_UW (RS, 0) * (unsigned64)GPR_UW (RT, 0);
+  unsigned64 prod1 = (unsigned64)GPR_UW (RS, 2) * (unsigned64)GPR_UW (RT, 2);
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  sum0 = prod0;
+  sum1 = prod1;
+  TMP_UD (0) = sum0;
+  TMP_UD (1) = sum1;
+  LO  = EXTEND32 (sum0);
+  HI  = EXTEND32 (VH4_8 (sum0));
+  LO1 = EXTEND32 (sum1);
+  HI1 = EXTEND32 (VH4_8 (sum1));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01100001001:MMI2:::PMULTW
+"pmultw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  signed64 sum0 = 0;
+  signed64 sum1 = 0;
+  signed64 prod0 = (signed64)GPR_SW (RS, 0) * (signed64)GPR_SW (RT, 0);
+  signed64 prod1 = (signed64)GPR_SW (RS, 2) * (signed64)GPR_SW (RT, 2);
+  TMP_DCL;
+  check_mult_hilo_hi1lo1 (SD_, HIHISTORY, LOHISTORY, HI1HISTORY, LO1HISTORY);
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  sum0 = prod0;
+  sum1 = prod1;
+  TMP_SD (0) = sum0;
+  TMP_SD (1) = sum1;
+  LO  = EXTEND32 (sum0);
+  HI  = EXTEND32 (VH4_8 (sum0));
+  LO1 = EXTEND32 (sum1);
+  HI1 = EXTEND32 (VH4_8 (sum1));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10011101001:MMI3:::PNOR
+"pnor r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    TMP_UW (i) = ~(GPR_UW (RS, i) | GPR_UW (RT, i));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10010101001:MMI3:::POR
+"por r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    TMP_UW (i) = (GPR_UW (RS, i) | GPR_UW (RT, i));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,11111001000:MMI0:::PPAC5
+"ppac5 r<RD>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    {
+      unsigned32 x = GPR_UW (RT, i);
+      TMP_UW (i) = ((x & (1  << 31)) >> (31 - 15))  
+	| ((x & (31 << 19)) >> (19 - 10))  
+	| ((x & (31 << 11)) >> (11 - 5))   
+	| ((x & (31 <<  3)) >> (3  - 0));  
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,11011001000:MMI0:::PPACB
+"ppacb r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UB (0)  = GPR_UB (RT, 0);
+  TMP_UB (1)  = GPR_UB (RT, 2);
+  TMP_UB (2)  = GPR_UB (RT, 4);
+  TMP_UB (3)  = GPR_UB (RT, 6);
+  TMP_UB (4)  = GPR_UB (RT, 8);
+  TMP_UB (5)  = GPR_UB (RT, 10);
+  TMP_UB (6)  = GPR_UB (RT, 12);
+  TMP_UB (7)  = GPR_UB (RT, 14);
+  TMP_UB (8)  = GPR_UB (RS, 0);
+  TMP_UB (9)  = GPR_UB (RS, 2);
+  TMP_UB (10) = GPR_UB (RS, 4);
+  TMP_UB (11) = GPR_UB (RS, 6);
+  TMP_UB (12) = GPR_UB (RS, 8);
+  TMP_UB (13) = GPR_UB (RS, 10);
+  TMP_UB (14) = GPR_UB (RS, 12);
+  TMP_UB (15) = GPR_UB (RS, 14);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10111001000:MMI0:::PPACH
+"ppach r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UH (0)  = GPR_UH (RT, 0);
+  TMP_UH (1)  = GPR_UH (RT, 2);
+  TMP_UH (2)  = GPR_UH (RT, 4);
+  TMP_UH (3)  = GPR_UH (RT, 6);
+  TMP_UH (4)  = GPR_UH (RS, 0);
+  TMP_UH (5)  = GPR_UH (RS, 2);
+  TMP_UH (6)  = GPR_UH (RS, 4);
+  TMP_UH (7)  = GPR_UH (RS, 6);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10011001000:MMI0:::PPACW
+"ppacw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UW (0)  = GPR_UW (RT, 0);
+  TMP_UW (1)  = GPR_UW (RT, 2);
+  TMP_UW (2)  = GPR_UW (RS, 0);
+  TMP_UW (3)  = GPR_UW (RS, 2);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,11011001001:MMI2:::PREVH
+"prevh r<RD>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  TMP_UH (0)  = GPR_UH (RT, 3);
+  TMP_UH (1)  = GPR_UH (RT, 2);
+  TMP_UH (2)  = GPR_UH (RT, 1);
+  TMP_UH (3)  = GPR_UH (RT, 0);
+  TMP_UH (4)  = GPR_UH (RT, 7);
+  TMP_UH (5)  = GPR_UH (RT, 6);
+  TMP_UH (6)  = GPR_UH (RT, 5);
+  TMP_UH (7)  = GPR_UH (RT, 4);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,11111001001:MMI2:::PROT3W
+"prot3w r<RD>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  TMP_UW (0)  = GPR_UW (RT, 1);
+  TMP_UW (1)  = GPR_UW (RT, 2);
+  TMP_UW (2)  = GPR_UW (RT, 0);
+  TMP_UW (3)  = GPR_UW (RT, 3);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,5.SHIFT,110100:MMINORM:::PSLLH
+"psllh r<RD>, r<RT>"
+*r5900:
+{
+  int shift_by = SHIFT & (16 - 1);
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS;i++)
+    TMP_UH(i) = (GPR_UH (RT, i) << shift_by);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00010001001:MMI2:::PSLLVW
+"psllvw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  int s0 = (GPR_UB (RS, 0) & 0x1F);
+  int s1 = (GPR_UB (RS, 8) & 0x1F);
+  signed32 temp0 = GPR_UW (RT, 0) << s0;
+  signed32 temp1 = GPR_UW (RT, 2) << s1;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_SD (0) = (signed64)temp0;
+  TMP_SD (1) = (signed64)temp1;
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,5.SHIFT,111100:MMINORM:::PSLLW
+"psllw r<RD>, r<RT>"
+*r5900:
+{
+  int shift_by = SHIFT & (32-1);
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    TMP_UW (i) = (GPR_UW (RT, i) << shift_by);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,5.SHIFT,110111:MMINORM:::PSRAH
+"psrah r<RD>, r<RT>"
+*r5900:
+{
+  int shift_by = SHIFT & (16-1);
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS;i++)
+    TMP_SH(i) = SIGNEXTEND((GPR_SH (RT, i) >> shift_by), (16-shift_by));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00011101001:MMI3:::PSRAVW
+"psravw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_SD (0) = SIGNEXTEND((GPR_SW (RT, 0) >> (GPR_UB (RS, 0) & 0x1F)), 32-(GPR_UB (RS, 0) & 0x1F));
+  TMP_SD (1) = SIGNEXTEND((GPR_SW (RT, 2) >> (GPR_UB (RS, 8) & 0x1F)), 32-(GPR_UB (RS, 8) & 0x1F));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,5.SHIFT,111111:MMINORM:::PSRAW
+"psraw r<RD>, r<RT>"
+*r5900:
+{
+  int shift_by = SHIFT & (32-1);
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    TMP_SW (i) = SIGNEXTEND((GPR_SW (RT, i) >> shift_by), (32-shift_by));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,5.SHIFT,110110:MMINORM:::PSRLH
+"psrlh r<RD>, r<RT>"
+*r5900:
+{
+  int shift_by = SHIFT & (16-1);
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<HALFWORDS_IN_MMI_REGS;i++)
+    TMP_UH(i) = (GPR_UH (RT, i) >> shift_by);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00011001001:MMI2:::PSRLVW
+"psrlvw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  TMP_UD (0) = SIGNEXTEND (GPR_UW (RT, 0) >> (GPR_UB (RS, 0) & 0x1F), 32);
+  TMP_UD (1) = SIGNEXTEND (GPR_UW (RT, 2) >> (GPR_UB (RS, 8) & 0x1F), 32);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+01110000000,5.RT,5.RD,5.SHIFT,111110:MMINORM:::PSRLW
+"psrlw r<RD>, r<RT>"
+*r5900:
+{
+  int shift_by = SHIFT & (32-1);
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT2 (GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    TMP_UW (i) = (GPR_UW (RT, i) >> shift_by);
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,01001001000:MMI0:::PSUBB
+"psubb r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < BYTES_IN_MMI_REGS; i++)
+    {
+      int s = GPR_SB (RS, i);
+      int t = GPR_SB (RT, i);
+      int r = s - t;
+      TMP_SB(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00101001000:MMI0:::PSUBH
+"psubh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < HALFWORDS_IN_MMI_REGS; i++)
+    {
+      int s = GPR_SH (RS, i);
+      int t = GPR_SH (RT, i);
+      int r = s - t;
+      TMP_SH(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,11001001000:MMI0:::PSUBSB
+"psubsb r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < BYTES_IN_MMI_REGS; i++)
+    {
+      int s = GPR_SB (RS, i);
+      int t = GPR_SB (RT, i);
+      int r = s - t;
+      if (r > 127)
+	TMP_SB(i) = 127;
+      else if (r < -128)
+	TMP_SB(i) = -128;
+      else
+	TMP_SB(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10101001000:MMI0:::PSUBSH
+"psubsh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < HALFWORDS_IN_MMI_REGS; i++)
+    {
+      int s = GPR_SH (RS, i);
+      int t = GPR_SH (RT, i);
+      int r = s - t;
+      if (r > 32767)
+	TMP_SH(i) = 32767;
+      else if (r < -32768)
+	TMP_SH(i) = -32768;
+      else
+	TMP_SH(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10001001000:MMI0:::PSUBSW
+"psubsw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < WORDS_IN_MMI_REGS; i++)
+    {
+      signed64 s = GPR_SW (RS, i);
+      signed64 t = GPR_SW (RT, i);
+      signed64 r = s - t;
+      if (r > (int)0x7FFFFFFF)
+	TMP_SW (i) = (int)0x7FFFFFFF;
+      else if (r < (int)0x80000000)
+	TMP_SW (i) = (int)0x80000000;
+      else
+	TMP_SW (i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,11001101000:MMI1:::PSUBUB
+"psubub r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < BYTES_IN_MMI_REGS; i++)
+    {
+      unsigned int s = GPR_UB (RS, i);
+      unsigned int t = GPR_UB (RT, i);
+      unsigned int r = s - t;
+      if (r > 0xFF)
+	TMP_UB(i) = 0;
+      else
+	TMP_UB(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10101101000:MMI1:::PSUBUH
+"psubuh r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < HALFWORDS_IN_MMI_REGS; i++)
+    {
+      unsigned int s = GPR_UH (RS, i);
+      unsigned int t = GPR_UH (RT, i);
+      unsigned int r = s - t;
+      if (r > 0xFFFF)
+	TMP_UH(i) = 0;
+      else
+	TMP_UH(i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10001101000:MMI1:::PSUBUW
+"psubuw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < WORDS_IN_MMI_REGS; i++)
+    {
+      unsigned64 s = GPR_UW (RS, i);
+      unsigned64 t = GPR_UW (RT, i);
+      unsigned64 r = s - t;
+      if (r > 0xFFFFFFFF)
+	TMP_UW (i) = 0;
+      else
+	TMP_UW (i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,00001001000:MMI0:::PSUBW
+"psubw r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for (i=0; i < WORDS_IN_MMI_REGS; i++)
+    {
+      signed64 s = GPR_SW (RS, i);
+      signed64 t = GPR_SW (RT, i);
+      signed64 r = s - t;
+      TMP_SW (i) = r;
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,10011001001:MMI2:::PXOR
+"pxor r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned i;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  for(i=0;i<WORDS_IN_MMI_REGS;i++)
+    TMP_UW (i) = (GPR_UW (RS, i) ^ GPR_UW (RT, i));
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011100,5.RS,5.RT,5.RD,11011101000:MMI1:::QFSRV
+"qfsrv r<RD>, r<RS>, r<RT>"
+*r5900:
+{
+  unsigned bytes = (SA / 8) % 16;
+  TMP_DCL;
+  TRACE_ALU_INPUT4 (GPR1[RS], GPR[RS], GPR1[RT], GPR[RT]);
+  if (SA % 8)
+    SignalException(ReservedInstruction, instruction_0);
+  else
+    {
+      unsigned i;
+      for(i=0;i<(16-bytes);i++)
+	TMP_SB(i) = GPR_SB (RT, bytes+i);
+      for(;i<16;i++)
+	TMP_SB(i) = GPR_SB (RS, i-(16-bytes));
+    }
+  TMP_WRT(RD);
+  TRACE_ALU_RESULT2 (GPR1[RD], GPR[RD]);
+}
+
+
+011111,5.BASE,5.RT,16.OFFSET:NORMAL:::SQ
+"sq r<RT>, <OFFSET> (r<BASE>)"
+*r5900:
+{
+  address_word vaddr = (GPR[BASE] + EXTEND16 (OFFSET));
+  address_word paddr;
+  int uncached;
+  unsigned64 memval0 = GPR[RT];
+  unsigned64 memval1 = GPR1[RT];
+  unsigned64 dummy = 0;
+
+  vaddr &= ~0xf; /* mask off bottom 4 bits */
+
+  AddressTranslation (vaddr, isDATA, isSTORE, &paddr, &uncached, isTARGET, isREAL);
+
+  StoreMemory (uncached, AccessLength_DOUBLEWORD, memval0, dummy, paddr, vaddr, isREAL);
+  StoreMemory (uncached, AccessLength_DOUBLEWORD, memval1, dummy, paddr+8, vaddr+8, isREAL);
+}
+
+
+// Appendix D - r5900 Specific floating-point instructions.
+
+
+// Unpack a 32 bit r5900 register into an infinite precision sim_fpu
+:function:::void:r59fp_unpack:sim_fpu *val, fp_word reg
+{
+  int sign = LSMASKED32 (reg, 31, 31) != 0;
+  int exp = LSEXTRACTED32 (reg, 30, 23);
+  unsigned fraction = LSEXTRACTED (reg, 22, 0);
+  /* printf ("UNPACK: 0x%08lx\n", (long) reg); */
+  if (exp == 0)
+    {
+      if (sign)
+	sim_fpu_neg (val, &sim_fpu_zero);
+      else
+	*val = sim_fpu_zero;
+    }
+  else
+    {
+      sim_fpu_fractionto (val, sign, exp - R5900_EXPBIAS, fraction, 23);
+    }
+}
+
+
+// Create an overflow value.
+// r5900 saturates overflow to MAXEXP + 1 normaly is a NaN.
+:function:::void:r59fp_overflow:fp_word *reg, int sign, unsigned32 fsr
+*r5900:
+{
+  FCSR |= fsr;
+  if (sign)
+    {
+      *reg = R5900_FPMIN;
+    }
+  else
+    {
+      *reg = R5900_FPMAX;
+    }
+  /* printf ("OVERFLOW: 0x%08lx\n", (long) *reg); */
+}
+
+
+// Create an zero value. r5900 always underflows to zero.
+:function:::void:r59fp_zero:fp_word *reg, int sign, unsigned32 fsr
+*r5900:
+{
+  FCSR |= fsr;
+  if (sign)
+    {
+      *reg = LSBIT32 (31);
+    }
+  else
+    {
+      *reg = 0;
+    }
+  /* fprintf (stderr, "ZERO: 0x%08lx\n", (long) *reg); */
+}
+
+
+// Pack an infinite precision FP result in to a 32 bit r5900 register
+:function:::void:r59fp_store:fp_word *reg, sim_fpu *ans, int status
+*r5900:
+{
+  if (status & sim_fpu_status_overflow)
+    {
+      r59fp_overflow (SD_, reg, sim_fpu_sign (ans),
+		      (R5900_FCSR_O | R5900_FCSR_SO));
+    }
+  else if (status & sim_fpu_status_underflow)
+    {
+      r59fp_zero (SD_, reg, sim_fpu_sign (ans),
+		  (R5900_FCSR_U | R5900_FCSR_SU));
+    }
+  else
+    {
+      switch (sim_fpu_is (ans))
+	{
+	case SIM_FPU_IS_SNAN:
+	  sim_engine_abort (SD, CPU, cia, "Invalid FP result - SNaN");
+  	case SIM_FPU_IS_QNAN:
+	  sim_engine_abort (SD, CPU, cia, "Invalid FP result - QNaN");
+  	case SIM_FPU_IS_NDENORM:
+	  sim_engine_abort (SD, CPU, cia, "Invalid FP result - -Denorm");
+  	case SIM_FPU_IS_PDENORM:
+	  sim_engine_abort (SD, CPU, cia, "Invalid FP result - +Denorm");
+	  break;
+
+  	case SIM_FPU_IS_NINF:
+  	case SIM_FPU_IS_PINF:
+	  r59fp_overflow (SD_, reg, sim_fpu_sign (ans),
+			  (R5900_FCSR_O | R5900_FCSR_SO));
+	  break;
+
+  	case SIM_FPU_IS_NNUMBER:
+  	case SIM_FPU_IS_PNUMBER:
+	  if (sim_fpu_exp (ans) > R5900_EXPMAX)
+	    r59fp_overflow (SD_, reg, sim_fpu_sign (ans),
+			    (R5900_FCSR_O | R5900_FCSR_SO));
+	  else if (sim_fpu_exp (ans) < R5900_EXPMIN)
+	    r59fp_zero (SD_, reg, sim_fpu_sign (ans),
+			(R5900_FCSR_U | R5900_FCSR_SU));
+	  else
+	    {
+	      unsigned32 sign = (sim_fpu_sign (ans) ? LSBIT32 (31) : 0);
+	      unsigned32 exp = LSINSERTED32 (sim_fpu_exp (ans) + R5900_EXPBIAS, 30, 23);
+	      unsigned32 fraction = sim_fpu_tofraction (ans, 23);
+	      *reg = (sign | exp | fraction);
+	    }
+	  break;
+
+  	case SIM_FPU_IS_NZERO:
+  	case SIM_FPU_IS_PZERO:
+	  r59fp_zero (SD_, reg, sim_fpu_sign (ans), 0);
+	  break;
+	}
+    }
+}
+
+
+:function:::void:r59fp_op1:fp_word *reg, sim_fpu_op1 *op, unsigned32 eop, fp_word l
+*r5900:
+{
+#if defined(TARGET_SKY) && defined(SKY_FUNIT)
+  word ops, opt;
+  word rst, acc;
+  bit acc_oflw, acc_zero;
+  bit oflw, uflw, sign, zero;		/* flags ADD/SUB/MUL & MAC */
+  bit moflw, muflw, msign, mzero;	/* flags for MAC mul part */
+  bit cplus, cminus;
+  bit ceq, cgt, clt;			/* flags for FPU */
+  bit opszero, optzero;
+  
+  TRACE_FP_INPUT1 (l);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  if (STATE_FP_TYPE_OPT(CPU_STATE(cpu)) & STATE_FP_TYPE_OPT_ACCURATE)
+    {
+      ops.f = *(float*)&l;
+      opt.f = rst.f = acc.f = 0.;
+      acc_oflw = 0;
+      acc_zero = 1;
+      fmac (eop, ops, opt, &rst, &acc,
+	    &acc_oflw, &acc_zero,
+	    &oflw, &uflw, &sign, &zero,
+	    &moflw, &muflw, &msign, &mzero,
+	    &cplus, &cminus,
+	    &ceq, &cgt, &clt,
+	    &opszero, &optzero);
+      assert (sizeof (fp_word) == sizeof (float));
+      *reg = * (fp_word*) &rst.f;
+    }
+  else
+    {
+      double fabs (double);
+      float tmp;
+      switch(eop)
+        {
+        case FLOP_ABS:
+          tmp = fabs (*(float*)&l);
+	  break;
+        case FLOP_FTOI0:
+	  ops.f = *(float*)&l;
+	  opt.f = rst.f = acc.f = 0.;
+	  acc_oflw = 0;
+	  acc_zero = 1;
+	  fmac (F_FTOI0, ops, opt, &rst, &acc,
+		&acc_oflw, &acc_zero,
+		&oflw, &uflw, &sign, &zero,
+		&moflw, &muflw, &msign, &mzero,
+		&cplus, &cminus,
+		&ceq, &cgt, &clt,
+		&opszero, &optzero);
+	  assert (sizeof (fp_word) == sizeof (float));
+	  tmp = rst.f;
+	  break;
+        case FLOP_ITOF0:
+	  ops.f = *(float*)&l;
+	  opt.f = rst.f = acc.f = 0.;
+	  acc_oflw = 0;
+	  acc_zero = 1;
+	  fmac (F_ITOF0, ops, opt, &rst, &acc,
+		&acc_oflw, &acc_zero,
+		&oflw, &uflw, &sign, &zero,
+		&moflw, &muflw, &msign, &mzero,
+		&cplus, &cminus,
+		&ceq, &cgt, &clt,
+		&opszero, &optzero);
+	  assert (sizeof (fp_word) == sizeof (float));
+	  tmp = rst.f;
+	  break;
+        case FLOP_NEG:
+          tmp = *(float*)&l;
+	  tmp = - tmp;
+	  break;
+        default:
+          assert(0);			/* internal error */
+        }
+      *reg = *(fp_word*)&tmp;
+    }
+  TRACE_FP_RESULT (*reg);
+#else
+  sim_fpu ans;
+  sim_fpu lhs;
+  int status = 0;
+  TRACE_FP_INPUT1 (l);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  r59fp_unpack (SD_, &lhs, l);
+  status |= op (&ans, &lhs);
+  r59fp_store (SD_, reg, &ans, status);
+  TRACE_FP_RESULT (*reg);
+#endif
+}
+
+
+:function:::void:r59fp_opsqrt:fp_word *reg, fp_word l
+*r5900:
+{
+#if defined(TARGET_SKY) && defined(SKY_FUNIT)
+  double sqrt (double);
+  
+  TRACE_FP_INPUT1 (l);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  if (STATE_FP_TYPE_OPT(CPU_STATE(cpu)) & STATE_FP_TYPE_OPT_ACCURATE)
+    {
+      word ops, opt;
+      word rst;
+      bit div0, nvld, oflw, uflw, sign, zero;
+        
+      ops.f = 0.;
+      opt.f = *(float*)&l;
+      if (opt.f < 0.)
+        {
+	  FCSR |= (R5900_FCSR_I | R5900_FCSR_SI);
+	  opt.f = - opt.f;
+	}  
+      fdiv(F_SQRT, ops, opt, &rst, &div0, &nvld, &oflw, &uflw, &sign, &zero);
+      assert (sizeof (fp_word) == sizeof (float));
+      *reg = * (fp_word*) &rst.f;
+    }
+  else
+    {
+      float tmp;
+      tmp = sqrt (*(float*)&l);
+      *reg = *(fp_word*)&tmp;
+    }
+  TRACE_FP_RESULT (*reg);
+#else
+  sim_fpu ans;
+  sim_fpu lhs;
+  int status = 0;
+  TRACE_FP_INPUT1 (l);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  r59fp_unpack (SD_, &lhs, l);
+  if (sim_fpu_sign (&lhs))
+    {
+      FCSR |= (R5900_FCSR_I | R5900_FCSR_SI);
+      sim_fpu_abs (&lhs, &lhs);
+    }
+  status |= sim_fpu_sqrt (&ans, &lhs);
+  r59fp_store (SD_, reg, &ans, status);
+  TRACE_FP_RESULT (*reg);
+#endif
+}
+
+
+:function:::void:r59fp_op2:fp_word *reg, sim_fpu_op2 *op, unsigned32 eop, fp_word l, fp_word r
+*r5900:
+{
+#if defined(TARGET_SKY) && defined(SKY_FUNIT)
+  word ops, opt;
+  word rst, acc;
+  bit acc_oflw, acc_zero;
+  bit oflw, uflw, sign, zero;		/* flags ADD/SUB/MUL & MAC */
+  bit moflw, muflw, msign, mzero;	/* flags for MAC mul part */
+  bit cplus, cminus;
+  bit ceq, cgt, clt;			/* flags for FPU */
+  bit opszero, optzero;
+  
+  TRACE_FP_INPUT2 (l, r);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  if (STATE_FP_TYPE_OPT(CPU_STATE(cpu)) & STATE_FP_TYPE_OPT_ACCURATE)
+    {
+      ops.f = *(float*)&l;
+      opt.f = *(float*)&r;
+      rst.f = acc.f = 0.;
+      acc_oflw = 0;
+      acc_zero = 1;
+      fmac (eop, ops, opt, &rst, &acc,
+            &acc_oflw, &acc_zero,
+	    &oflw, &uflw, &sign, &zero,
+	    &moflw, &muflw, &msign, &mzero,
+	    &cplus, &cminus,
+	    &ceq, &cgt, &clt,
+	    &opszero, &optzero);
+      assert (sizeof (fp_word) == sizeof (float));
+      *reg = *(fp_word*)&rst.f;
+    }
+  else
+    {
+      float tmp, tmpl = *(float*)&l, tmpr = *(float*)&r;
+      switch(eop)
+        {
+        case FLOP_ADD:
+          tmp = tmpl + tmpr;
+	  break;
+        case FLOP_MAX:
+          tmp = tmpl;
+	  if (tmpr > tmpl)
+	    tmp = tmpr;
+	  break;
+        case FLOP_MIN:
+          tmp = tmpl;
+	  if (tmpr < tmpl)
+	    tmp = tmpr;
+	  break;
+        case FLOP_MUL:
+          tmp = tmpl * tmpr;
+	  break;
+        case FLOP_SUB:
+          tmp = tmpl - tmpr;
+	  break;
+        default:
+          assert(0);			/* internal error */
+        }
+      *reg = *(fp_word*)&tmp;
+    }
+  TRACE_FP_RESULT (*reg);
+#else
+  sim_fpu ans;
+  sim_fpu lhs;
+  sim_fpu rhs;
+  int status = 0;
+  TRACE_FP_INPUT2 (l, r);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  r59fp_unpack (SD_, &lhs, l);
+  r59fp_unpack (SD_, &rhs, r);
+  status |= op (&ans, &lhs, &rhs);
+  r59fp_store (SD_, reg, &ans, status);
+  TRACE_FP_RESULT (*reg);
+#endif
+}
+
+
+:function:::void:r59fp_opdiv:fp_word *reg, fp_word l, fp_word r
+*r5900:
+{
+#if defined(TARGET_SKY) && defined(SKY_FUNIT)
+  word ops, opt, rst;
+  bit div0, nvld, oflw, uflw, sign, zero;
+  
+  TRACE_FP_INPUT2 (l, r);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  if (STATE_FP_TYPE_OPT(CPU_STATE(cpu)) & STATE_FP_TYPE_OPT_ACCURATE)
+    {
+      ops.f = *(float*)&l;
+      opt.f = *(float*)&r;
+      fdiv(F_DIV, ops, opt, &rst, &div0, &nvld, &oflw, &uflw, &sign, &zero);
+      if (nvld)
+        FCSR |= R5900_FCSR_I | R5900_FCSR_SI;
+      else if (div0)
+        FCSR |= R5900_FCSR_D | R5900_FCSR_SD;
+      assert (sizeof (fp_word) == sizeof (float));
+      *reg = *(fp_word*)&rst.f;
+    }
+  else
+    {
+      float tmp, tmpl = *(float*)&l, tmpr = *(float*)&r;
+      tmp = tmpl / tmpr;
+      *reg = *(fp_word*)&tmp;
+    }
+  TRACE_FP_RESULT (*reg);
+#else
+  sim_fpu ans;
+  sim_fpu lhs;
+  sim_fpu rhs;
+  int status = 0;
+  TRACE_FP_INPUT2 (l, r);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  r59fp_unpack (SD_, &lhs, l);
+  r59fp_unpack (SD_, &rhs, r);
+  status |= sim_fpu_div (&ans, &lhs, &rhs);
+  if (status & sim_fpu_status_invalid_zdz)
+    {
+      r59fp_overflow (SD_, reg,
+		      sim_fpu_sign (&lhs) ^ sim_fpu_sign (&rhs),
+		      (R5900_FCSR_I | R5900_FCSR_SI));
+    }
+  else if (status & sim_fpu_status_invalid_div0)
+    {
+      r59fp_overflow (SD_, reg,
+		      sim_fpu_sign (&lhs) ^ sim_fpu_sign (&rhs),
+		      (R5900_FCSR_D | R5900_FCSR_SD));
+    }
+  else
+    {
+      unsigned_word old_fcsr;
+      /* Note - r5900 DIV does not set overflow/underflow bits */
+      old_fcsr = FCSR;
+      r59fp_store (SD_, reg, &ans, status);
+      FCSR = old_fcsr;
+    }
+  TRACE_FP_RESULT (*reg);
+#endif
+}
+
+
+:function:::void:r59fp_mula:fp_word *reg, sim_fpu_op2 *opa, unsigned32 eop, fp_word a, fp_word l, fp_word r
+*r5900:
+{
+#if defined(TARGET_SKY) && defined(SKY_FUNIT)
+  word ops, opt;
+  word rst, acc;
+  bit acc_oflw, acc_zero;
+  bit oflw, uflw, sign, zero;		/* flags ADD/SUB/MUL & MAC */
+  bit moflw, muflw, msign, mzero;	/* flags for MAC mul part */
+  bit cplus, cminus;
+  bit ceq, cgt, clt;			/* flags for FPU */
+  bit opszero, optzero;
+  
+  TRACE_FP_INPUT3 (a, l, r);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  if (STATE_FP_TYPE_OPT(CPU_STATE(cpu)) & STATE_FP_TYPE_OPT_ACCURATE)
+    {
+      acc.f = *(float*)&a;
+      ops.f = *(float*)&l;
+      opt.f = *(float*)&r;
+      rst.f = 0.;
+      acc_oflw = 0;
+      acc_zero = 0;
+      if (a == 0.)
+	acc_zero = 1;
+      fmac (eop, ops, opt, &rst, &acc,
+	    &acc_oflw, &acc_zero,
+	    &oflw, &uflw, &sign, &zero,
+	    &moflw, &muflw, &msign, &mzero,
+	    &cplus, &cminus,
+	    &ceq, &cgt, &clt,
+	    &opszero, &optzero);
+      assert (sizeof (fp_word) == sizeof (float));
+      *reg = * (fp_word*) &rst.f;
+    }
+  else
+    {
+      float tmp, tmpa = *(float*)&a;
+      float tmpl = *(float*)&l, tmpr = *(float*)&r;
+      switch(eop)
+        {
+        case FLOP_MADD:
+          tmp = tmpa + tmpl * tmpr;
+	  break;
+        case FLOP_MSUB:
+          tmp = tmpa - tmpl * tmpr;
+	  break;
+        default:
+          assert(0);			/* internal error */
+        }
+      *reg = *(fp_word*)&tmp;
+    }
+  TRACE_FP_RESULT (*reg);
+#else
+  /* implement as two independant operations, both of which could
+     update the status register */
+  fp_word m;
+  TRACE_FP_INPUT3 (a, l, r);
+  {
+    /* perform MULT cycle */
+    int status;
+    sim_fpu lhs;
+    sim_fpu rhs;
+    sim_fpu mul;
+    FCSR &= ~(R5900_FCSR_CAUSE);
+    r59fp_unpack (SD_, &lhs, l);
+    r59fp_unpack (SD_, &rhs, r);
+    status = sim_fpu_mul (&mul, &lhs, &rhs);
+    r59fp_store (SD_, &m, &mul, status);
+  }
+  if (0) fprintf (stderr, " <0x%08lx> +- <0x%08lx>", (long) a, (long) m);
+  if (FCSR & R5900_FCSR_O)
+    {
+      /* OVERFLOWED PRODUCT: Discard accumulator.  Still need add
+         cycle to so that product has the correct sign. */
+      a = 0;
+    }
+  else
+    {
+      /* Loose any status from first cycle */
+      FCSR &= ~(R5900_FCSR_CAUSE);
+      if (a == R5900_FPMIN || a == R5900_FPMAX)
+	{
+	  /* OVERFLOWED ACCUMULATOR: Discard non-overflowing
+             product. */
+	  FCSR |= (R5900_FCSR_O | R5900_FCSR_SO);
+	  m = 0;
+	}
+    }
+  {
+    /* Perform ADD cycle */
+    int status;
+    sim_fpu mul;
+    sim_fpu acc;
+    sim_fpu ans;
+    r59fp_unpack (SD_, &mul, m);
+    r59fp_unpack (SD_, &acc, a);
+    status = opa (&ans, &acc, &mul);
+    if (0) fprintf (stderr, " a:<%d>", sim_fpu_sign (&acc));
+    if (0) fprintf (stderr, " m:<%d>", sim_fpu_sign (&mul));
+    if (0) fprintf (stderr, " -><%d>", sim_fpu_sign (&ans));
+    r59fp_store (SD_, reg, &ans, status);
+  }
+  TRACE_FP_RESULT2 (m, *reg);
+#endif
+}
+
+
+010001,10000,00000,5.FS,5.FD,000101:NORMAL:::ABS.S
+"abs.s f<FD>, f<FS>"
+*r5900:
+{
+  r59fp_op1 (SD_, &FGR[FD], sim_fpu_abs, FLOP_ABS, FGR[FS]);
+}
+
+
+010001,10000,5.FT,5.FS,5.FD,000000:NORMAL:::ADD.S
+"add.s f<FD>, f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_op2 (SD_, &FGR[FD], sim_fpu_add, FLOP_ADD, FGR[FS], FGR[FT]);
+}
+
+
+010001,10000,5.FT,5.FS,00000,011000:NORMAL:::ADDA.S
+"adda.s f<FT>, f<FS>"
+*r5900:
+{
+  r59fp_op2 (SD_, &ACC, sim_fpu_add, FLOP_ADD, FGR[FS], FGR[FT]);
+}
+
+
+
+// BC2F
+// BC2FL
+// BC2T
+// BC2TL
+
+010010,01000,3.0,1.ND,1.TF,16.OFFSET:COP2S:32,f::BC2
+"bc2%s<TF>%s<ND> <OFFSET>"
+*r5900:
+{
+#ifdef TARGET_SKY
+  extern int vu0_busy();
+  int cpcond2 = vu0_busy();
+
+  TRACE_BRANCH_INPUT (cpcond2);
+  if (cpcond2 == TF)
+    {
+      address_word dest = NIA + (EXTEND16 (OFFSET) << 2);
+      TRACE_BRANCH_RESULT (dest);
+      DELAY_SLOT (dest);
+    }
+  else if (ND)
+    {
+      TRACE_BRANCH_RESULT (0);
+      NULLIFY_NEXT_INSTRUCTION ();
+    }
+  else
+    {
+      TRACE_BRANCH_RESULT (NIA);
+    }
+#else
+  SignalException(ReservedInstruction, instruction_0);
+#endif
+}
+
+
+
+// BC1F - mips.igen
+// BC1FL - mips.igen
+// BC1T - mips.igen
+// BC1TL - mips.igen
+
+
+:%s::::r59cond:int cond
+*r5900:
+{
+  switch (cond)
+    {
+    case 0: return "f";
+    case 1: return "eq";
+    case 2: return "lt";
+    case 3: return "le";
+    default: return "??";
+    }
+}
+
+010001,10000,5.FT,5.FS,00000,11,0,2.COND,0:NORMAL:::C.cond.S
+"c.%s<r59cond#COND>.s f<FS>, f<FT>"
+*r5900:
+{
+  sim_fpu fs;
+  sim_fpu ft;
+  int c = 0;
+  int less = 0;
+  int equal = 0;
+  TRACE_FP_INPUT2 (FGR[FS], FGR[FT]);
+  r59fp_unpack (SD_, &fs, FGR[FS]);
+  r59fp_unpack (SD_, &ft, FGR[FT]);
+  switch (sim_fpu_cmp (&fs, &ft))
+    {
+    case SIM_FPU_IS_SNAN:
+    case SIM_FPU_IS_QNAN:
+    case SIM_FPU_IS_NINF:
+    case SIM_FPU_IS_PINF:
+    case SIM_FPU_IS_NDENORM:
+    case SIM_FPU_IS_PDENORM:
+      equal = 0;
+      less = 0;
+      break;
+    case SIM_FPU_IS_NZERO:
+    case SIM_FPU_IS_PZERO:
+      equal = 1;
+      less = 0;
+      break;
+    case SIM_FPU_IS_NNUMBER:
+      equal = 0;
+      less = 1;
+      break;
+    case SIM_FPU_IS_PNUMBER:
+      equal = 0;
+      less = 0;
+    }
+  switch (COND)
+    {
+    case 0: c = 0;
+      break;
+    case 1: c = equal;
+      break;
+    case 2: c = less;
+      break;
+    case 3: c = less || equal;
+      break;
+    }
+  SETFCC (0, c);
+  TRACE_FP_RESULT_BOOL (c);
+}
+
+
+// CFC1
+// CTC1
+
+010001,00,0,10,5.RT,5.FS,00000000000:COP1S:32::CFC1
+"cfc1 r<RT>, f<FS>"
+*r5900:
+{
+  switch (FS)
+    {
+    case 0:
+      {
+	TRACE_ALU_INPUT1 (FCR0);
+	GPR[RT] = SIGNEXTEND (FCR0, 32);
+	break;
+      }
+    case 31:
+      {
+	TRACE_ALU_INPUT1 (FCR31);
+	GPR[RT] = SIGNEXTEND (FCR31, 32) | 1;
+	break;
+      }
+    default:
+      /* else NOP */
+    }
+  TRACE_ALU_RESULT (GPR[RT]);
+}
+
+010001,00,1,10,5.RT,5.FS,00000000000:COP1S:32::CTC1
+"ctc1 r<RT>, f<FS>"
+*r5900:
+{
+  /* control to */
+  TRACE_ALU_INPUT1 (GPR[RT]);
+  switch (FS)
+    {
+    case 31:
+      {
+	FCR31 = VL4_8(GPR[RT]);
+	SETFCC(0,((FCR31 & (1 << 23)) ? 1 : 0));
+	TRACE_ALU_RESULT (FCR31);
+	break;
+      }
+    default:
+      /* else NOP */
+      TRACE_ALU_RESULT0 ();
+      break;
+    }
+}
+
+010001,10100,00000,5.FS,5.FD,100000:NORMAL:::CVT.S.W
+"cvt.s.w f<FD>, f<FS>"
+*r5900:
+{
+#if defined(TARGET_SKY) && defined(SKY_FUNIT)
+  r59fp_op1 (SD_, &FGR[FD], NULL, FLOP_ITOF0, FGR[FS]);
+#else
+  sim_fpu val;
+  TRACE_FP_INPUT_WORD1 (FGR[FS]);
+  sim_fpu_i32to (&val, FGR[FS], 0);
+  r59fp_store (SD_, &FGR[FD], &val, 0);
+  TRACE_FP_RESULT (FGR[FD]);
+#endif
+}
+
+
+010001,10000,00000,5.FS,5.FD,100100:NORMAL:::CVT.W.S
+"cvt.w.s f<FD>, f<FS>"
+*r5900:
+{
+#if defined(TARGET_SKY) && defined(SKY_FUNIT)
+  r59fp_op1 (SD_, &FGR[FD], NULL, FLOP_FTOI0, FGR[FS]);
+#else
+  sim_fpu val;
+  TRACE_FP_INPUT1 (FGR[FS]);
+  r59fp_unpack (SD_, &val, FGR[FS]);
+  sim_fpu_to32i (&FGR[FD], &val, sim_fpu_round_zero);
+  TRACE_FP_RESULT_WORD (FGR[FD]);
+#endif
+}
+
+
+010001,10000,5.FT,5.FS,5.FD,000011:NORMAL:::DIV.S
+"div.s f<FD>, f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_opdiv (SD_, &FGR[FD], FGR[FS], FGR[FT]);
+}
+
+
+// LWC1
+
+
+010001,10000,5.FT,5.FS,5.FD,011100:NORMAL:::MADD.S
+"madd.s f<FD>, f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_mula (SD_, &FGR[FD], sim_fpu_add, FLOP_MADD, ACC, FGR[FS], FGR[FT]);
+}
+
+
+010001,10000,5.FT,5.FS,00000,011110:NORMAL:::MADDA.S
+"madda.s f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_mula (SD_, &ACC, sim_fpu_add, FLOP_MADD, ACC, FGR[FS], FGR[FT]);
+}
+
+
+010001,10000,5.FT,5.FS,5.FD,101000:NORMAL:::MAX.S
+"max.s f<FD>, f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_op2 (SD_, &FGR[FD], sim_fpu_max, FLOP_MAX, FGR[FS], FGR[FT]);
+}
+
+
+010001,00000,5.RT,5.FS,000,0000,0000:NORMAL:::MFC1
+"mfc1 r<RT>, f<FS>"
+{
+  TRACE_FP_INPUT1 (FGR[FS]);
+  /* should this take two cycles? */
+  GPR[RT] = EXTEND32 (FGR[FS]);
+  TRACE_FP_RESULT_WORD (GPR[RT]);
+}
+
+
+// NOTE: D-21 has function `110000' which is wrong.
+010001,10000,5.FT,5.FS,5.FD,101001:NORMAL:::MIN.S
+"min.s f<FD>, f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_op2 (SD_, &FGR[FD], sim_fpu_min, FLOP_MIN, FGR[FS], FGR[FT]);
+}
+
+
+010001,10000,00000,5.FS,5.FD,000110:NORMAL:::MOV.S
+"mov f<FD>, f<FS>"
+{
+  TRACE_FP_INPUT1 (FGR[FS]);
+  FGR[FD] = FGR[FS];
+  TRACE_FP_RESULT (FGR[FD]);
+}
+
+
+010001,10000,5.FT,5.FS,5.FD,011101:NORMAL:::MSUB.S
+"msub.s f<FD>, f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_mula (SD_, &FGR[FD], sim_fpu_sub, FLOP_MSUB, ACC, FGR[FS], FGR[FT]);
+}
+
+
+010001,10000,5.FT,5.FS,00000,011111:NORMAL:::MSUBA.S
+"msubs.s f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_mula (SD_, &ACC, sim_fpu_sub, FLOP_MSUB, ACC, FGR[FS], FGR[FT]);
+}
+
+
+010001,00100,5.RT,5.FS,000,0000,0000:NORMAL:::MTC1
+"mtc1 r<RT>, f<FS>"
+{
+  TRACE_FP_INPUT_WORD1 (GPR[RT]);
+  /* should this take two cycles? */
+  FGR[FS] = GPR[RT];
+  TRACE_FP_RESULT (FGR[FS]);
+}
+
+
+010001,10000,5.FT,5.FS,5.FD,000010:NORMAL:::MUL.S
+"mul.s f<FD>, f<FS>, f<FT>"
+{
+  r59fp_op2 (SD_, &FGR[FD], sim_fpu_mul, FLOP_MUL, FGR[FS], FGR[FT]);
+}
+
+
+010001,10000,5.FT,5.FS,00000,011010:NORMAL:::MULA.S
+"mula.s f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_op2 (SD_, &ACC, sim_fpu_mul, FLOP_MUL, FGR[FS], FGR[FT]);
+}
+
+
+010001,10000,00000,5.FS,5.FD,000111:NORMAL:::NEG.S
+"neg.s f<FD>, f<FS>"
+*r5900:
+{
+  r59fp_op1 (SD_, &FGR[FD], sim_fpu_neg, FLOP_NEG, FGR[FS]);
+}
+
+
+010001,10000,5.FT,5.FS,5.FD,010110:NORMAL:::RSQRT.S
+"rsqrt.s f<FD>, f<FS>, f<FT>"
+*r5900:
+{
+#if defined(TARGET_SKY) && defined(SKY_FUNIT)
+  double sqrt (double);
+  TRACE_FP_INPUT1 (FGR[FS]);
+  TRACE_FP_INPUT1 (FGR[FT]);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  if (STATE_FP_TYPE_OPT(CPU_STATE(cpu)) & STATE_FP_TYPE_OPT_ACCURATE)
+    {
+      word fs, ft;
+      word qt;
+      bit div0, nvld, oflw, uflw, sign, zero;
+        
+      fs.f = *(float*)&(FGR[FT]);
+      ft.f = *(float*)&(FGR[FS]);
+      fdiv(F_RSQRT, fs, ft, &qt, &div0, &nvld, &oflw, &uflw, &sign, &zero);
+      if (nvld)
+	FCSR |= R5900_FCSR_I | R5900_FCSR_SI;
+      assert (sizeof (fp_word) == sizeof (float));
+      FGR[FD] = * (fp_word*) &qt.f;
+    }
+  else
+    {
+      float tmp;
+      tmp = *(float*)&(FGR[FT]) / sqrt (*(float*)&(FGR[FS]));
+      FGR[FD] = *(fp_word*)&tmp;
+    }
+  TRACE_FP_RESULT (FGR[FD]);
+#else
+  sim_fpu ans;
+  sim_fpu tmp;
+  sim_fpu s;
+  sim_fpu t;
+  TRACE_FP_INPUT1 (FGR[FS]);
+  TRACE_FP_INPUT1 (FGR[FT]);
+  FCSR &= ~(R5900_FCSR_CAUSE);
+  r59fp_unpack (SD_, &s, FGR[FS]);
+  r59fp_unpack (SD_, &t, FGR[FT]);
+  /* compute S / sqrt (abs (T)) */
+  if (sim_fpu_is_zero (&t))
+    {
+      if (sim_fpu_is_zero (&s))
+	{
+	  /* Note - r5900 RSQRT zdz only sets I/SI */
+	  r59fp_overflow (SD_, &FGR[FD], sim_fpu_sign (&s),
+			  R5900_FCSR_I | R5900_FCSR_SI);
+	}
+      else if (sim_fpu_sign (&t))
+	{
+	  /* Note - r5900 RSQRT div(-0) sets both I/SI and D/SD */
+	  r59fp_overflow (SD_, &FGR[FD], sim_fpu_sign (&s),
+			  R5900_FCSR_D | R5900_FCSR_SD
+			  | R5900_FCSR_I | R5900_FCSR_SI);
+	}
+      else
+	{
+	  /* Note - r5900 RSQRT div(+0) sets only D/SD */
+	  r59fp_overflow (SD_, &FGR[FD], sim_fpu_sign (&s),
+			  R5900_FCSR_D | R5900_FCSR_SD);
+	}
+    }
+  else
+    {
+      unsigned_word old_fcsr;
+      if (sim_fpu_sign (&t))
+	{
+	  FCSR |= (R5900_FCSR_I | R5900_FCSR_SI);
+	  sim_fpu_abs (&t, &t);
+	}
+      sim_fpu_sqrt (&tmp, &t);
+      sim_fpu_div (&ans, &s, &tmp);
+      /* Note - r5900 RSQRT does not set overflow/underflow bits */
+      old_fcsr = FCSR;
+      r59fp_store (SD_, &FGR[FD], &ans, 0);
+      FCSR = old_fcsr;
+    }
+  TRACE_FP_RESULT (FGR[FD]);
+#endif
+}
+
+
+010001,10000,5.FT,00000,5.FD,000100:NORMAL:::SQRT.S
+"sqrt.s f<FD>, f<FT>"
+*r5900:
+{
+  r59fp_opsqrt (SD_, &FGR[FD], FGR[FT]);
+}
+
+
+010001,10000,5.FT,5.FS,5.FD,000001:NORMAL:::SUB.S
+"sub.s f<FD>, f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_op2 (SD_, &FGR[FD], sim_fpu_sub, FLOP_SUB, FGR[FS], FGR[FT]);
+}
+
+
+010001,10000,5.FT,5.FS,00000,011001:NORMAL:::SUBA.S
+"suba.s f<FS>, f<FT>"
+*r5900:
+{
+  r59fp_op2 (SD_, &ACC, sim_fpu_sub, FLOP_SUB, FGR[FS], FGR[FT]);
+}
+
+
+110110,5.BASE,5.RT,16.OFFSET:NORMAL:64::LQC2
+"lqc2 r<RT>, <OFFSET>(r<BASE>)"
+*r5900:
+{
+#ifdef TARGET_SKY
+  unsigned32 instruction = instruction_0;
+  signed_word offset = SIGNEXTEND((signed_word)((instruction >> 0) & 0x0000FFFF),16);
+  int destreg = ((instruction >> 16) & 0x0000001F);
+  signed_word op1 = GPR[((instruction >> 21) & 0x0000001F)];
+  {
+    address_word vaddr = ((unsigned64)op1 + offset);
+    address_word paddr;
+    int uncached;
+    if ((vaddr & 0x0f) != 0)
+      SignalExceptionAddressLoad();
+    else
+      {
+	if (AddressTranslation(vaddr,isDATA,isLOAD,&paddr,&uncached,isTARGET,isREAL))
+	  {
+	    unsigned128 qw;
+	    unsigned64 dummy = 0;
+	    unsigned64 memval;
+
+	    LoadMemory(&memval,&dummy,uncached,AccessLength_DOUBLEWORD,paddr,vaddr,isDATA,isREAL);
+	    *A8_16(& qw, 1) = memval;
+	    LoadMemory(&memval,&dummy,uncached,AccessLength_DOUBLEWORD,paddr+8,vaddr+8,isDATA,isREAL);
+	    *A8_16(& qw, 0) = memval;
+
+	    COP_LQ(((instruction >> 26) & 0x3),destreg,qw);
+	  }
+	/* XXX: else? */
+      }
+  }
+#else
+  SignalException(ReservedInstruction, instruction_0);
+#endif /* TARGET_SKY */
+}
+
+
+111110,5.BASE,5.RT,16.OFFSET:NORMAL:64::SQC2
+"sqc2 r<RT>, <OFFSET>(r<BASE>)"
+*r5900:
+{
+#ifdef TARGET_SKY
+  unsigned32 instruction = instruction_0;
+  signed_word offset = SIGNEXTEND((signed_word)((instruction >> 0) & 0x0000FFFF),16);
+  int destreg = ((instruction >> 16) & 0x0000001F);
+  signed_word op1 = GPR[((instruction >> 21) & 0x0000001F)];
+  {
+    address_word vaddr = ((unsigned64)op1 + offset);
+    address_word paddr;
+    int uncached;
+    if ((vaddr & 0x0f) != 0)
+      SignalExceptionAddressStore();
+    else
+      {
+	if (AddressTranslation(vaddr,isDATA,isSTORE,&paddr,&uncached,isTARGET,isREAL))
+	  {
+	    unsigned128 qw;
+	    unsigned64 dummy = 0;
+	    unsigned64 memval;
+	    qw = COP_SQ(((instruction >> 26) & 0x3),destreg);
+	    memval = *A8_16(& qw, 1);
+	    StoreMemory(uncached,AccessLength_DOUBLEWORD,memval,dummy,paddr,vaddr,isREAL);
+	    memval = *A8_16(& qw, 0);
+	    StoreMemory(uncached,AccessLength_DOUBLEWORD,memval,dummy,paddr+8,vaddr+8,isREAL);
+	  }
+	/* XXX: else? */
+      }
+  }
+#else
+  SignalException(ReservedInstruction, instruction_0);
+#endif /* TARGET_SKY */
+}
+
+
+// SWC1 - mips.igen
+
+//
+// MIPS Architecture:
+//
+//        System Control Instruction Set (COP0)
+//
+
+
+010000,01000,00000,16.OFFSET:COP0:32::BC0F
+"bc0f <OFFSET>"
+*r5900:
+{
+#ifdef TARGET_SKY
+  extern int sky_cpcond0A;
+  if (sky_cpcond0A == 0)
+    {
+      address_word dest = NIA + (EXTEND16 (OFFSET) << 2);
+      TRACE_BRANCH_RESULT (dest);
+      DELAY_SLOT (dest);
+    }
+  else
+    {
+      TRACE_BRANCH_RESULT (NIA);
+    }
+#else
+  TRACE_BRANCH_INPUT (1);
+  TRACE_BRANCH_RESULT (NIA);
+#endif 
+}
+
+
+010000,01000,00010,16.OFFSET:COP0:32::BC0FL
+"bc0fl <OFFSET>"
+*r5900:
+{
+#ifdef TARGET_SKY
+  extern int sky_cpcond0A;
+  if (sky_cpcond0A == 0)
+    {
+      address_word dest = NIA + (EXTEND16 (OFFSET) << 2);
+      TRACE_BRANCH_RESULT (dest);
+      DELAY_SLOT (dest);
+    }
+  else
+    {
+      TRACE_BRANCH_RESULT (0);
+      NULLIFY_NEXT_INSTRUCTION ();
+    }
+#else
+  TRACE_BRANCH_INPUT (1);
+  TRACE_BRANCH_RESULT (0);
+  NULLIFY_NEXT_INSTRUCTION ();
+#endif 
+}
+
+
+010000,01000,00001,16.OFFSET:COP0:32::BC0T
+"bc0t <OFFSET>"
+*r5900:
+{
+#ifdef TARGET_SKY
+  extern int sky_cpcond0A;
+  if (sky_cpcond0A != 0)
+    {
+      address_word dest = NIA + (EXTEND16 (OFFSET) << 2);
+      TRACE_BRANCH_RESULT (dest);
+      DELAY_SLOT (dest);
+    }
+  else
+    {
+      TRACE_BRANCH_RESULT (NIA);
+    }
+#else
+  address_word dest = NIA + (EXTEND16 (OFFSET) << 2);
+  TRACE_BRANCH_INPUT (1);
+  TRACE_BRANCH_RESULT (dest);
+  DELAY_SLOT (dest);
+#endif
+}
+
+
+010000,01000,00011,16.OFFSET:COP0:32::BC0TL
+"bc0tl <OFFSET>"
+*r5900:
+{
+#ifdef TARGET_SKY
+  extern int sky_cpcond0A;
+  if (sky_cpcond0A != 0)
+    {
+      address_word dest = NIA + (EXTEND16 (OFFSET) << 2);
+      TRACE_BRANCH_RESULT (dest);
+      DELAY_SLOT (dest);
+    }
+  else
+    {
+      TRACE_BRANCH_RESULT (0);
+      NULLIFY_NEXT_INSTRUCTION ();
+    }
+#else
+  address_word dest = NIA + (EXTEND16 (OFFSET) << 2);
+  TRACE_BRANCH_INPUT (1);
+  TRACE_BRANCH_RESULT (dest);
+  DELAY_SLOT (dest);
+#endif
+}
+
+
+101111,5.BASE,5.OP,16.OFFSET:NORMAL:32::CACHE
+*r5900:
+{
+  /* NOP */
+}
+
+
+010000,10000,000000000000000,111001:COP0:32::DI
+"di"
+*r5900:
+{
+  SR &= ~status_EIE;
+}
+
+
+010000,10000,000000000000000,111000:COP0:32::EI
+"ei"
+*r5900:
+{
+  SR |= status_EIE;
+}
+
+
+010000,10000,000000000000000,001000:COP0:32::TLBP
+"tlbp"
+*r5900:
+{
+  /*
+  if (!kernel_mode && (SR & status_CU0 == 0))
+     SignalException(CoProcessorUnusable,instruction_0);
+  */
+
+  int i;
+  COP0_INDEX = 0x80000000;
+  for (i = 0; i<TLB_SIZE; i++) 
+    {
+      if (  (TLB[i].hi & 0xffffe000) == (COP0_ENTRYHI & 0xffffe000)
+          && ((TLB[i].hi & 0xffff1000) != 0 || (TLB[i].hi & 0x000000ff) == (COP0_ENTRYHI & 0x000000ff)))
+        {
+          COP0_INDEX = i;
+	  break;
+        }
+    }
+}
+
+
+010000,10000,000000000000000,000001:COP0:32::TLBR
+"tlbr"
+*r5900:
+{
+  /*
+  if (!kernel_mode && (SR & status_CU0 == 0))
+     SignalException(CoProcessorUnusable,instruction_0);
+  */
+
+  int i;
+  i = COP0_INDEX;
+  COP0_PAGEMASK = TLB[i].mask;
+  COP0_ENTRYHI = TLB[i].hi & ~(TLB[i].mask);
+  if ((TLB[i].hi & TLB_HI_G_MASK) != 0)
+    {
+      COP0_ENTRYLO0 = TLB[i].lo0 & 0x00000001;
+      COP0_ENTRYLO1 = TLB[i].lo1 & 0x00000001;
+    }
+  else
+    {
+      COP0_ENTRYLO0 = TLB[i].lo0;
+      COP0_ENTRYLO1 = TLB[i].lo1;
+    }
+}
+
+
+010000,10000,000000000000000,000010:COP0:32::TLBWI
+"tlbwi"
+*r5900:
+{
+  /*
+  if (!kernel_mode && (SR & status_CU0 == 0))
+     SignalException(CoProcessorUnusable,instruction_0);
+  */
+  int i;
+  i = COP0_INDEX;
+  TLB[i].mask = COP0_PAGEMASK;
+  if (((COP0_ENTRYLO0 & 0x0000001) != 0) && ((COP0_ENTRYLO1 & 0x00000001) != 0))
+    TLB[i].hi = (COP0_ENTRYHI & ~(TLB[i].mask)) | TLB_HI_G_MASK;
+  else
+    TLB[i].hi = (COP0_ENTRYHI & ~(TLB[i].mask));
+  TLB[i].lo0 = COP0_ENTRYLO0 & 0xfffffffe;
+  TLB[i].lo1 = COP0_ENTRYLO1 & 0xfffffffe;
+}
+
+
+010000,10000,000000000000000,000110:COP0:32::TLBWR
+"tlbwr"
+*r5900:
+{
+  /*
+  if (!kernel_mode && (SR & status_CU0 == 0))
+     SignalException(CoProcessorUnusable,instruction_0);
+  */
+  int i;
+  i = rand()%(TLB_SIZE - COP0_WIRED) + COP0_WIRED;
+  TLB[i].mask = COP0_PAGEMASK;
+  if (((COP0_ENTRYLO0 & 0x0000001) != 0) && ((COP0_ENTRYLO1 & 0x00000001) != 0))
+    TLB[i].hi = (COP0_ENTRYHI & ~(TLB[i].mask)) | TLB_HI_G_MASK;
+  else
+    TLB[i].hi = (COP0_ENTRYHI & ~(TLB[i].mask));
+  TLB[i].lo0 = COP0_ENTRYLO0 & 0xfffffffe;
+  TLB[i].lo1 = COP0_ENTRYLO1 & 0xfffffffe;
+}

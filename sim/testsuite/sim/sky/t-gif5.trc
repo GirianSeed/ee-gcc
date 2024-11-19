@@ -1,0 +1,165 @@
+# t-gif5.trc: GIF Unit Test - REGISTERS -------------------
+
+# Verify proper actions when reading/writing from/to
+# GIF registers
+
+#----------------------------------------------------------
+# GIF_CTRL
+# 1. Verify a reset when a GIF_CRTL.RST is sent
+# PATH1: Gif tag: 1 register, EOP = 0, nloop = 2)
+2 0x00000000_00000002_14000000_00000001 0x00000000
+# PATH1: Data
+2 0x11111111_99999999_aaaaaaaa_bbbbbbbb 0x00000000
+# READ GIF_STAT 
+? 0xb0003020 0x000006c0	0xffffffff
+# GIF_CTRL.RST
+! 0xb0003000 0x00000001
+# READ GIF_STAT ( should be zero )
+? 0xb0003020 0x00000000	0xffffffff
+
+# 2. Verify zeros when attempting to read STAT
+? 0xb0003000 0x00000000 0xffffffff
+
+#----------------------------------------------------------
+# GIF_MODE  
+# 1. Verify GIF_MODE.M3R ( sets P3Q as well )
+! 0xb0003010 0x00000001
+# READ GIF_STAT
+? 0xb0003020 0x00000041	0xffffffff
+
+# 2. Verify GIF_MODE.IMT
+! 0xb0003010 0x00000004
+# READ GIF_STAT
+? 0xb0003020 0x00000004	0xffffffff
+
+# 3. Reset GIF_MODE
+! 0xb0003010 0x00000000
+# READ GIF_STAT 
+? 0xb0003020 0x00000000 0xffffffff
+
+# 4. Verify zeros when attempting to read MODE
+? 0xb0003010 0x00000000 0xffffffff
+
+#----------------------------------------------------------
+# GIF_VIF_M3P ( special register for VIF to set M3P bit )
+# 1. Verify GIF_VIF_M3P.GIF_REG_STAT_M3P
+! 0xb00030b0 0x00000002
+# READ GIF_STAT
+? 0xb0003020 0x00000042 0xffffffff
+# RESET M3P
+! 0xb00030b0 0x00000000
+# READ GIF_STAT
+? 0xb0003020 0x00000000 0xffffffff
+
+# 2. Verify zeros when attempting to read
+? 0xb00030b0 0x00000000 0xffffffff
+
+#----------------------------------------------------------
+# GIF_STAT ( M3R, M3P, IMT, P3Q tested above )
+# 1. Verify a warning when attempting to write ( nothing )
+! 0xb0003020 0x11111111 0x00000000
+
+# 2. Verify PATH1 transfer  
+# PATH1: Gif tag: Image, EOP = 0, nloop = 1)
+2 0x00000000_00000000_08000000_00000001 0x00000000
+2 0x11111111_22222222_33333333_44444444 0x00000000
+# READ GIF_STAT
+? 0xb0003020 0x000006c0 0xffffffff
+# PATH1: Gif tag: Image, EOP = 1, nloop = 1)
+2 0x00000000_00000000_08000000_00008001 0x00000000
+2 0x11111111_22222222_33333333_44444444 0x00000000
+# READ GIF_STAT: EOP should have reset
+? 0xb0003020 0x00000000 0xffffffff
+
+# 2. Verify PATH2 transfer  
+# PATH1: Gif tag: Image, EOP = 0, nloop = 1)
+3 0x00000000_00000000_08000000_00000001 0x00000000
+3 0x11111111_22222222_33333333_44444444 0x00000000
+# READ GIF_STAT
+? 0xb0003020 0x00000b40 0xffffffff
+# PATH1: Gif tag: Image, EOP = 1, nloop = 1)
+3 0x00000000_00000000_08000000_00008001 0x00000000
+3 0x11111111_22222222_33333333_44444444 0x00000000
+# READ GIF_STAT: EOP should have reset
+? 0xb0003020 0x00000000 0xffffffff
+
+# 3. Verify PATH3 transfer  
+# PATH1: Gif tag: Image, EOP = 0, nloop = 1)
+4 0x00000000_00000000_08000000_00000001 0x00000000
+4 0x11111111_22222222_33333333_44444444 0x00000000
+# READ GIF_STAT
+? 0xb0003020 0x00000f80 0xffffffff
+# PATH1: Gif tag: Image, EOP = 1, nloop = 1)
+4 0x00000000_00000000_08000000_00008001 0x00000000
+4 0x11111111_22222222_33333333_44444444 0x00000000
+# READ GIF_STAT: EOP should have reset
+? 0xb0003020 0x00000000 0xffffffff
+
+#----------------------------------------------------------
+# GIF_RESERVED - Not supported
+# GIF_TAGx - Not supported 
+# GIF_CNT - Not support
+# 1. Verify zeros when attempting to read
+? 0xb0003030 0x00000000 0xffffffff
+? 0xb0003040 0x00000000 0xffffffff
+? 0xb0003050 0x00000000 0xffffffff
+? 0xb0003060 0x00000000 0xffffffff
+? 0xb0003070 0x00000000 0xffffffff
+? 0xb0003080 0x00000000 0xffffffff
+
+# 2. Verify a warning when attempting to write ( nothing )
+! 0xb0003030 0x11111111 0x00000000
+! 0xb0003040 0x11111111 0x00000000
+! 0xb0003050 0x11111111 0x00000000
+! 0xb0003060 0x11111111 0x00000000
+! 0xb0003070 0x11111111 0x00000000
+! 0xb0003080 0x11111111 0x00000000
+
+#----------------------------------------------------------
+# GIF_P3CNT
+# 1. Valid only during PATH 3 image transfers
+# PATH3: Gif tag: Image, EOP = 1, nloop = 4)
+4 0x00000000_00000000_08000000_00008004 0x00000000
+4 0x11111111_22222222_33333333_44444444 0x00000000
+4 0x11111111_22222222_33333333_44444444 0x00000000
+4 0x11111111_22222222_33333333_44444444 0x00000000
+# PATH1: Gif tag: Image, EOP = 1, nloop = 1)
+2 0x00000000_00000000_08000000_00008001 0x00000000
+# READ GIF_P3CNT - should be 1
+? 0xb0003090 0x00000001 0xffffffff
+2 0xaaaaaaaa_bbbbbbbb_cccccccc_dddddddd 0x00000000
+# Finish the PATH3 read
+4 0xabababab_cdcdcdcd_efefefef_ffffffff 0x00000000
+
+# 2. Verify a zeros when attempting to write to P3CNT 
+! 0xb0003090 0x11111111 0x00000000
+
+#----------------------------------------------------------
+# GIF_P3TAG
+# 1. Valid only during PATH 3 image transfers
+# PATH3: Gif tag: Image, EOP = 1, nloop = 4)
+4 0x00000000_00000000_08000000_00008004 0x00000000
+4 0x11111111_22222222_33333333_44444444 0x00000000
+4 0x11111111_22222222_33333333_44444444 0x00000000
+4 0x11111111_22222222_33333333_44444444 0x00000000
+# PATH1: Gif tag: Image, EOP = 1, nloop = 1)
+2 0x00000000_00000000_08000000_00008001 0x00000000
+# READ GIF_P3TAG - should be 1
+? 0xb00030a0 0x00008004 0xffffffff
+2 0xaaaaaaaa_bbbbbbbb_cccccccc_dddddddd 0x00000000
+# Finish the PATH3 read
+4 0xabababab_cdcdcdcd_efefefef_ffffffff 0x00000000
+
+# 2. Verify zeros when attempting to write to P3TAG
+! 0xb00030a0 0x11111111 0x00000000
+
+#----------------------------------------------------------
+# GIF Registers - Alignment / size errors
+# 1. Read / Write - Not Aligned
+@ 0xb0003098 4 
+! 0xb0003008 0x00000000 0x00000000
+
+# 2. Read / Write - Invalid size
+@ 0xb0003020 8
+~ 0xb0003000 0x00000000_00000000
+

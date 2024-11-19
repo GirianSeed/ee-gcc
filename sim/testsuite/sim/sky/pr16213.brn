@@ -1,0 +1,5 @@
+set c_files $srcdir/$subdir/pr16213.c
+set dvpasm_files $srcdir/$subdir/pr16213.dvpasm
+set run_file pr16213.run
+set run_suffix ">& pr16213.out"
+lappend junk_files "pr16213.out"
