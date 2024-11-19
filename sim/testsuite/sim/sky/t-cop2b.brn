@@ -1,0 +1,4 @@
+set c_files $srcdir/$subdir/t-cop2b.c
+set run_file t-cop2b.run
+set timtout 300
+set test_on_skyb_p 0

@@ -1,0 +1,58 @@
+# Multi-phase load test
+
+source $srcdir/$subdir/sky-defs.tcl
+
+# -------
+# Mainline
+
+if [istarget mips64r5900-sky-elf] {
+
+    set test "sky multi-phase load"
+
+    # set test case file names
+    set sky_kernel_src $srcdir/$subdir/mloadkern.c
+    regsub "\.c$" $sky_kernel_src ".run" sky_kernel_run
+    set sky_kernel_run [file tail $sky_kernel_run]
+    set sky_kernel_base "0x80030000"
+
+    set sky_user_src $srcdir/$subdir/mloaduser.c
+    regsub "\.c$" $sky_user_src ".run" sky_user_run
+    set sky_user_run [file tail $sky_user_run]
+    set sky_user_base "0x00010000"    
+
+    # Compile kernel
+    if {[sim_compile $sky_kernel_src $sky_kernel_run executable "debug {additional_flags=-Ttext=$sky_kernel_base}"] != ""} {
+	perror "compile $sky_kernel_src"
+	unresolved $test
+	return
+    }
+
+    # Compile user
+    if {[sim_compile $sky_user_src $sky_user_run executable "debug {additional_flags=-Ttext=$sky_user_base -nostartfiles -nostdlib}"] != ""} {
+	perror "compile $sky_user_src"
+	unresolved $test
+	return
+    }
+
+    if [is_remote host] {
+	if { [remote_download host $sky_user_run] == "" } {
+	    perror "upload $sky_user_run"
+	    unresolved $test
+	    return
+	}
+    }
+
+    # Run multi-phase sim
+    set options "--load-next $sky_user_run"
+    set result [sim_run $sky_kernel_run $options "" "" ""]
+    set status [lindex $result 0]
+    set output [lindex $result 1]
+
+    verbose "result: $output" 1
+
+    if [string match "*Loaded, PC=0x00010000*Returned from user code*Cannot load program 1*Loaded, PC=0x00000000*exiting*" $output] {
+	file delete $sky_kernel_run
+	file delete $sky_user_run
+	pass $test
+    } { fail $test }
+}

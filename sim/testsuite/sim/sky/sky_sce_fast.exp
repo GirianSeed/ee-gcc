@@ -1,0 +1,75 @@
+# Slow SKY TESTS
+
+source $srcdir/$subdir/sky-defs.tcl
+
+# -------
+# Mainline
+
+if [istarget mips64r5900-sky-elf] {
+
+    if [is_remote host] {
+	remote_download host $srcdir/$subdir/vu.h
+	remote_download host $srcdir/$subdir/vif.h
+	remote_download host $srcdir/$subdir/dma.h
+    }
+
+    # Run graphical tests by automatically generated ".brn" file
+    foreach sce [lsort [glob -nocomplain $srcdir/$subdir/sce_test*.dvpasm]] {
+	# If we're only testing specific files and this isn't one of them,
+	# skip it.
+	if ![runtest_file_p $runtests $sce] {
+	    continue
+	}
+
+	regsub ".dvpasm$" $sce "" base
+	set base [file tail $base]
+	set brn "$base.brn"
+	set brnfile [open $brn w]
+	puts $brnfile "set mach sky_sce_fast"
+	puts $brnfile "set dvpasm_files \"$sce $srcdir/$subdir/refresh.dvpasm\""
+	regsub ".dvpasm$" $sce ".run" runfile
+	set runfile [file tail $runfile]
+	puts $brnfile "set c_files $srcdir/$subdir/sce_main.c"
+	puts $brnfile "set run_file $runfile"
+	puts $brnfile "set run_flags \"--float-type fast --enable-gs off\""
+	puts $brnfile "set run_suffix \"> tmp.${base}_fast.gsout\""
+	puts $brnfile "set output_files {tmp.${base}_fast.gsout}"
+	puts $brnfile "set timeout 300"
+        puts $brnfile "lappend junk_files tmp.${base}_fast.gsout"
+        set gifdat "$srcdir/$subdir/fast_gs/${base}.gsout"
+	puts $brnfile "lappend test_commands \"diff -bitw  $gifdat tmp.${base}_fast.gsout > ${base}_fast.dif \"" 
+	puts $brnfile "lappend junk_files ${base}_fast.dif"
+	close $brnfile
+
+	run_brn_test $brn
+	file delete $brn    
+    }
+    
+#####################
+## FYI...
+## 
+## The effect of the above code is like the following:
+##   (using sce_test6.dvpasm as an example)
+##
+## sce is /build/sky-builds/devo/sim/testsuite/sim/sky/sce_test6.dvpasm
+## base is sce_test6
+## runfile is sce_test6.run
+## brn is sce_test6.brn
+##
+## The following is the contents of sce_test6.brn:
+## ----- start of "cat sce_test6.brn" ----
+##set mach sky_sce_fast
+##set dvpasm_files "/build/sky-builds/devo/sim/testsuite/sim/sky/sce_test6.dvpasm /build/
+##sky-builds/devo/sim/testsuite/sim/sky/refresh.dvpasm"
+##set c_files /build/sky-builds/devo/sim/testsuite/sim/sky/sce_main.c
+##set run_file sce_test6.run
+##set run_flags "--float-type fast --enable-gs off"
+##set run_suffix ">& sce_test6.gsout"
+##set timeout 300
+##lappend test_commands "diff -bitw  /build/sky-builds/devo/sim/testsuite/sim/sky/fast_gs/sce_test6_out_gif.dat sce_test6.gsout > sce_test6.dif "
+## ----- end of "cat sce_test6.brn" ----
+##
+#####################
+
+    
+}

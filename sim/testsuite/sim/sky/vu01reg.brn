@@ -1,0 +1,5 @@
+set c_files $srcdir/$subdir/vu01reg-main.c
+set dvpasm_files $srcdir/$subdir/vu01reg.dvpasm
+set run_file vu01reg.run
+set run_suffix ">& vu01reg.out"
+set test_on_skyb_p 0

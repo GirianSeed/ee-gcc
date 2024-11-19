@@ -1,0 +1,13 @@
+;
+; PR 16213
+; We want to make sure that we can have a GIF tag inside an unpack
+; data block.  If this assembles with exit code 0, we're OK.
+;
+	.DmaPackVif 1
+	
+	unpack	4,4,V4_32,0,3
+	GIFpacked REGS={XYZF2}, NLOOP=2, EOP
+	.quad	0x0_1_2_3
+	.quad	0x4_5_6_7
+	.EndGIF
+	.EndUnpack

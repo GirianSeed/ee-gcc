@@ -1,0 +1,456 @@
+1999-07-18  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl (assembler,objdump): Try to find in build tree.
+
+Fri Jun 18 16:49:10 1999  Doug Evans  <devans@canuck.cygnus.com>
+
+	* sky-defs.tcl (DVPAS): Try to find in build tree.
+
+Thu Jun 17 16:48:54 1999  Doug Evans  <devans@canuck.cygnus.com>
+
+	* t-cop2.vuexpect: More updates for mtir changes.
+
+Wed Feb 10 14:26:38 1999  Doug Evans  <devans@canuck.cygnus.com>
+
+	* level2_gen.pl: Comment out MTIR case.
+
+1998-12-31  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* t-cop2.s: Adjust vmtir instruction tests for new syntax.
+	* t-cop2.vuexpect: Matching changes.
+
+1998-12-30  Felix Lee  <flee@cygnus.com>
+ 
+	* sky-defs.tcl: various changes for remote host testing.
+	* mload.exp: ditto.
+	* sky_sce.exp: ditto.
+	* sky_sce_accurate.exp: ditto.
+	* sky_sce_fast.exp: ditto.
+
+	* mload.exp: mark as unresolved on error.
+
+Thu Dec 17 13:28:06 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* sce_test12.vuasm: Update syntax of MTIR insn.
+	* sce_test14.vuasm: Ditto.
+	* sce_test16.vuasm: Ditto.
+	* sce_test18.vuasm: Ditto.
+	* sce_test20.vuasm: Ditto.
+	* sce_test22.vuasm: Ditto.
+	* sce_test24.vuasm: Ditto.
+	* sce_test26.vuasm: Ditto.
+	* sce_test28.vuasm: Ditto.
+	* sce_test30.vuasm: Ditto.
+	* sce_test32.vuasm: Ditto.
+	* sce_test34.vuasm: Ditto.
+	* sce_test47.vuasm: Ditto.
+
+Thu Oct 29 14:10:22 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-defs.tcl: xfail certain tests due to changes in
+ 	constant value of VU register VF00yz.
+
+Tue Oct 13 13:01:24 EDT 1998 Frank Ch. Eigler <fche@cygnus.com>
+
+	* t-cop2.*: Update tests for VRNEXT and VRGET
+	instructions, to match corrected operand synatx.
+
+Wed Sep 23 12:05:11 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl (*): Converted some perl constructs to use
+ 	only perl 4 features.  Remove junk whitespace before calling split()
+	for compatibility.
+
+Fri Sep 18 15:16:56 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* vu01reg-main.c (validate_ctrl): Only test bits of
+	statusflag that we're allowed to set.
+	* vu01reg.dvpasm (vumain1_ctrl): Set statusflag to 0xa80.
+
+Fri Sep 18 14:52:00 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl (conv_vuasm): Convert incoming .float
+	constants to .word in perl to avoid gas processing.
+
+Fri Sep 18 13:16:21 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* t-dma.dmaexpect: Modified last line to expect that
+	DMA_Dn_CHCR__DIR be set to "1".  Change required because of pr17171.
+
+Thu Sep 17 17:30:42 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl (conv_vuasm): Handle DC.F construct
+	in parallel with lower VU insn.
+
+Wed Sep 16 15:12:38 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sce_main.c (DMA_Dn_CHCR__{STR,TTE,MODE}: cleanup.
+
+Tue Sep 15 17:32:29 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl (conv_vuasm): Support data segment
+	label addresses for ADDI instruction.
+
+Tue Sep 15 09:56:59 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* rw-vureg.c: Check that attempts to overwrite constant
+	 VU registers (VF0, VI0) are futile.
+
+	* sky-defs.tcl (run_l2s_test): Clean up all files left
+	behind by level2_gen.pl for passing level-2 test cases.
+
+	* t-cop2.vuexpect: Update to match slightly changed
+	disassembly format from sky-libvpe.
+
+Tue Sep 15 01:08:40 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* vu01reg-main.c: Test vu1 control reg access.
+	* vu01reg.dvpasm: Ditto.
+
+Mon Sep 14 20:30:34 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* dma.h (DMA_Dn_CHCR__{STR,TTE,MODE}: cleanup.
+	* vu01reg-main.c: as above
+	* vureloc-main.c: as above
+	* t-int.c: Change setting of DMA DIRection flag.
+
+Mon Sep 14 15:33:15 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* dma.h (DMA_Dn_CHCR__{START,TIE,MODE}): New macros.
+	(DMA_Dn_CHCR__{MODE_NORM,MODE_CHAIN,DIR}): New macros.
+	* vu01reg-main.c: Specify DMA_Dn_CHCR__DIR.
+	* vureloc.c: Specify DMA_Dn_CHCR__DIR.
+	* sce_main.c: DMA_Dn_CHCR__START renamed from ...__DMA_START.
+
+	* sky-defs.tcl (run_trc_test): Save old timeout before
+	clobbering it.
+	(run_brn_test): Set default timeout of 500 seconds.
+
+Wed Sep  9 14:42:24 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* pr17191.s: New file.
+	* pr17191.brn: New file.
+	* t-macros.inc: New file.
+
+Tue Sep 8 18:33:04 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sce_main.c: PR17171: DMA_Dn_CHCR__DIR was not specified.
+	* t_dma.c: PR17171: DMA_Dn_CHCR__DIR was not specified.
+
+Thu Sep 3 10:27:04 EDT 1998 Frank Ch. Eigler <fche@cygnus.com>
+
+	* level2.exp: Renamed back.
+	* sky-defs.tcl: Increased level-2 timeouts.
+	* level2_gen.pl: Use two passes to process incoming
+	assembly.  Keep temporary files temporarily.
+
+Mon Aug 24 16:23:29 1998  Jillian Ye <jillian@cygnus.com>
+
+        * level2.exp:  temporally renamed it to level2.test
+
+Thu Aug 20 14:29:29 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+	* t-gs.[trc|gsexpect]: new address modifications
+	
+Thu Aug 20 10:50:15 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* refresh.dvpasm: change refreshe to refresha.
+
+Wed Aug 19 11:42:00 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sky.exp: Disable these tests for target vpu-elf
+	(mips64el-skyb-elf).
+
+Tue Aug 18 17:31:30 1998  Jillian <jillian@cygnus.com>
+
+        * [sky_sce scky_sce_accurate].exp:
+        Allow for the test of sce2_test*.dvpasm.
+        * fast_gs/sce2_test*.gsout: Add expected gs output
+        for the sce2_test cases.
+
+Tue Aug 18 17:27:10 1998 Jillian Ye <jillian@cygnus.com>
+     
+        * fast_gs/sce2_test11.gsout: added file.
+
+Thu Aug 13 15:08:19 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	Add skyb support.
+	* *.dvpasm: Replace .section with section.
+	* sce_macros.s (section): New macro.
+	* sky-defs.tcl (run_brn_test): Handle test_on_skyb_p.
+	Pass -no-dma --defsym skyb_p=1 if skyb to dvp gas.  Otherwise pass
+	--defsym skyb_p=0 to dvp gas.
+	* sky_sce.exp: Don't compile sce_main.c if skyb.
+	* sky_sce_accurate.exp: Ditto.
+	* t-cop2.brn: Don't run if skyb.
+	* t-cop2b.brn: Ditto.
+	* t-dma.brn: Ditto.
+	* t-int.brn: Ditto.
+	* vu01reg.brn: Ditto.
+	* vureloc.brn: Ditto.
+	* vureloc.dvpasm: Tweak .section usage.
+	* refresh.dvpasm: Issue a flushe first if skyb_p.
+
+Tue Aug 11 20:58:43 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* [sky sky_sce scky_sce_accurate].exp:
+	Allow for the new target mips64el-skyb-elf.
+
+Tue Aug 11 13:52:56 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* t-int-handler.s: Removed unneeded copy of interrupt
+	handler code.  Store CAUSE register value.
+	* t-int.c: Store and confirm CAUSE value during interrupt.
+
+Tue Aug 11 13:57:50 1998 Jillian Ye <jillian@cygnus.com>
+
+        * sky_sce_accurate.exp: increase the timeout value
+        from 2000 to 3000
+
+Thu Jul 30 16:39:37 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* t-cop2.{s,vuexpect}: Test two-operand VCLIP insn. 
+
+Wed Jul 29 16:10:42 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl (conv_vuasm): More similar tweaks.
+	* sky-defs.tcl: Force all tests to use vu1, since some test
+	cases exhaust vu0 memory resources.
+
+Wed Jul 29 01:06:03 1998  Felix Lee  <flee@cygnus.com>
+
+	* sky-defs.tcl (findperl): new function.  we can't rely on
+ 	"#!perl" doing the right thing.
+
+Fri Jul 24 19:48:08 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl (conv_vuasm): Add another pattern for
+ 	classifying data section word vs. float literals.
+
+Thu Jul 23 17:55:48 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl (conv_vuasm): Added new patterns for
+ 	translating more "level 2" test cases.  Removed some patterns
+ 	that masked inconsistent assembler specifications.
+	(print_section): Use more reliable filtering for objdump results.
+
+Wed Jul 22 16:10:49 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2_gen.pl: Use kseg1 addresses in generated code.
+  	Include some regexp tweaks to make more tosh test cases translate.
+	* sky-defs.tcl (run_l2s_test): Use sim --float-type
+ 	accurate and enlarge timeouts.
+	
+Wed Jul 22 14:39:16 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* mload.exp: New test for multi-phase load.  
+	* mload{kern,user}.c: Sample code for test.
+
+Tue Jul 21 18:44:57 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+	* *: Many changes for MMU.  Physical addresses now 
+	referenced via kseg1 (0xa00000000) range.
+
+Fri Jul 17 16:53:11 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* level2.exp: New file, driver for VU "level 2" test
+ 	cases.
+	* level2_gen.pl: New file, strange assembler-to-C
+	translator.
+	* level2/*.s: Many many non-dvp assembler sources.
+	* sky-defs.tcl: Learn how to run these sources.
+	
+	* t-pke3.trc: Test one additional border condition.
+
+Fri Jul 17 13:57:50 1998 Jillian Ye <jillian@cygnus.com>
+
+        * fast_gs/*: forward fitting sky-980617 branch updates of
+        fast_gs.
+        * Makefile.in: Ensure make clean cleans off the intermediate files 
+        generated by the sky testsuite (*.run, *.c, *.dif, *.*out ).
+
+Thu Jul 2 15:22:29 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* pr16213.[dvpasm|c|brn]: Add a PR test case.
+
+Wed Jun 24 19:09:03 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* t-cop2.vuexpect: Adapt to new disassembly format.
+
+Wed Jun 24 18:28:12 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+	* fast_gs (*.gsout): Replace all files with
+	correct results for normal rounding mode ieee math.
+
+Wed Jun 24 18:16:00 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* t-int.c, t-int-handler.c:
+	Testcase errors: two in the former file, one in the latter.
+
+Wed Jun 24 17:35:00 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * Updated t-dma.c: It missed check-in earlier today.
+
+Wed Jun 24 17:12:07 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+	* vu01reg.dvpasm: Fix testcase to handle temporary
+	back out of R_MIPS_DVP_11_S4 relocation.
+
+Wed Jun 24 11:24:32 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+	* vu01reg.dvpasm: Change undefined MSCNT 
+	instructions to "MSCAL 0".
+
+Wed Jun 24 11:34:00 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * Updated t-dma.{brn|dmaexpect} because a
+	warning msg being checked for contains an address
+	that differs between -mhard-float and -msoft-float.
+
+Fri Jun 19 17:57:50 1998 Jillian Ye <jillian@cygnus.com>
+        
+        * Created fast_gs and accurate_gs
+	for storing the gs output file for float-type fast
+	and accurate respectively; also added and moved
+	files for this purpose.
+
+Thu Jun 18 23:53:43 1998  Doug Evans  <devans@seba.cygnus.com>
+
+	* vureloc{.brn,-main.c,.dvpasm}: New files.
+
+Tue Jun 16 18:39:32 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-defs.tcl: Use --sky-debug option instead of environment
+	variable to collect PKE traces.
+
+Tue Jun 16 18:33:37 1998 Jillian Ye <jillian@cygnus.com>
+
+        * sky_sce.exp: Removing sce2* and adding comments. 
+	* sky_sce_fast.exp: Removing diff, sce2, and adding
+	  comments.
+
+Tue Jun 16 15:44:01 1998 Jillian Ye <jillian@cygnus.com>
+
+        * sky-defs.tcl: passing timeout option to sim_run
+
+Tue Jun 16 09:03:37 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* t-cop2.s: Reorder instruction blocks to prevent "Out of bounds"
+	messages during test execution.  Added dummy branch labels for BC2*
+ 	instructions.
+	* t-cop2.brn: Use --sky-debug option instead of env var.
+	* t-cop2.vuexpect: Updated for with new disassembly format.
+	
+	* sky_sce_fast.exp: Don't compare GIF outputs for
+ 	--float-type=fast.
+	* sce_test{17,33,49}.dvpasm: Use ".DmaPackVif 1" option to
+	exercise assembler / PKE.
+	
+	* rw-vureg.c: Cast memcpy operand to allay warning.
+
+Mon Jun 15 15:34:10 1998 Frank Ch. Eigler <fche@cygnus.com>
+
+	* sky_sce_fast.exp: New file for fast floating point mode of
+	SCEI test cases.
+
+Tue Jun 12 16:20:30 1998 Jillian Ye <jillian@cygnus.com>
+
+        * sky_sce.exp: Set the timeout for the sce visual testcases
+	  to be 2000 sec (clock time). 
+        * sky-defs.tcl: Accept the timeout set in brn file
+	  by sky_sce.exp for the duration of the test, and restore
+	  the original value after the test is done.
+
+Thu Jun 11 15:24:53 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* vu01reg-main.c: New file.
+	* vu01reg.dvpasm: New file.
+	* vu01reg.brn: New file.
+
+	* vu.h (VU0_MEM1_WINDOW_START): New macro.
+	(VU0_MEM1_SIZE): New macro.
+
+	* sky-defs.tcl (run_brn_test): Fix `options' arg to
+	sim_compile.  Fix handling of dvpasm_flags.
+	(run_trc_test): Update to new way of environment variables to sim_run.
+
+Wed Jun 10 15:56:10 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* t-int.c: New file to test sky hardware
+	interrupts.
+	* t-int-handler.s: New file for null interrupt
+	handler.
+	* t-int.brn: New file to build new test.
+
+Tue Jun  9 16:30:16 1998 Jillian Ye <jillian@cygnus.com>
+
+        * sky_sce.exp: Added the "diff -bitw" clause,
+          and turn on the "--enable-gs", "--float-type" options.
+
+Tue Jun  9 08:55:05 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* dma.h: New file.
+	* vif.h: New file.
+	* vu.h: New file.
+	* sce_main.c: Move magic numbers to .h files.
+
+Fri Jun 03 11:22:33 1998  Patrick Macdonald <patrickm@cygnus.com>
+
+	* t-gif4.[trc|gifexpect]: additional test for a PATH3
+	  pause 
+	* t-gif6.[trc|gifexpect]: additional test for IMT ( non
+	  multiple of 8)
+
+Mon Jun  1 18:54:22 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-defs.tcl: Use it.
+	
+	* t-pke2.vif1out: Update to match recent word-precise
+ 	tracking table change in sim/mips/sky-pke.c.
+	* t-pke3.trc: Ditto.
+	* t-pke4.vif0expect: Ditto.
+
+Thu May 21 11:45:50 1998  Patrick Macdonald <patrickm@cygnus.com>
+
+	* t-gif6.trc: IMT burst testcases
+	* t-gif6.gifexpect: IMT burst expected results
+	
+Wed May 20 18:10:28 1998 Jillian Ye <jillian@cygnus.com>
+
+        * c_gen.pl: Added subroutine "print_comment"
+                    and on/off option for "src line #"
+
+Mon May 18 10:37:47 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* sky.ld: Delete file.
+
+Thu May 14 11:48:35 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* sky-defs.tcl (LDSCRIPT,SIM): Delete.
+	(run_trc_test): Use sim_compile, sim_run.  Only delete temp files
+	if testcase passed.
+	(run_brn_test): Ditto.
+	* sky.exp: Add runtest_file_p support.  Don't print
+	unsupported message if not sky.
+	* sky_sce.exp: Likewise.
+
+Thu May  7 12:30:59 1998  Patrick Macdonald <patrickm@cygnus.com>
+
+	* sky-defs.tcl: add handling for gifexpect and gsexpect
+	* t-gif*.trc: GIF unit test cases
+	* t-gif*.gifexpect: GIF unit test expected results
+	* t-gs.trc: GS unit test case
+	* t-gs.gsexpect: GS unit test case expected result
+	 
+Mon May  4 17:49:56 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-defs.tcl: New file, common dejagnu routine definitions.
+	* sky.exp: New file, quick dejagnu test driver.
+	* sky_sce.exp: New file, SCE dejagnu test driver.
+	* *.brn: New files, test fragment descriptions.
+	* OTHERS: Old test cases from sim/testsuite/sky.
+
+Mon May  4 17:59:11 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* Makefile.in: swallow stderr on buggy tests
+

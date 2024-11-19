@@ -1,0 +1,65 @@
+# t-gif2.trc: GIF Unit Test - REGLIST MODE ----------------
+
+# Verify proper unpacking of REGLIST mode data in all three
+# paths
+
+#----------------------------------------------------------
+# PATH1: Gif tag: 3 registers, EOP = 0, nloop = 2 (no trunc)
+2 0x00000000_00000412_34000000_00000002 0x00000000
+
+# PATH1: Data
+2 0x11111111_99999999_aaaaaaaa_bbbbbbbb 0x00000000
+2 0xcccccccc_dddddddd_eeeeeeee_ffffffff 0x00000000
+2 0x55555555_44444444_33333333_22222222 0x00000000
+
+# PATH1: Gif tag: registers: NOOP, A_D, XYZ2
+#        EOP = 1, nloop = 3 (truncated last quad )
+2 0x00000000_000005ef_34000000_00008003 0x00000000
+
+# PATH1: Data
+2 0x00000000_00000002_00000000_00000001 0x00000000
+2 0x00000000_00000004_00000000_00000003 0x00000000
+2 0x00000000_00000006_00000000_00000005 0x00000000
+2 0x00000000_00000008_00000000_00000007 0x00000000
+2 0x00000000_0000000a_00000000_00000009 0x00000000
+
+#----------------------------------------------------------
+# PATH2: Gif tag: 3 registers, EOP = 0, nloop = 2 (no trunc)
+3 0x00000000_00000412_34000000_00000002 0x00000000
+
+# PATH2: Data
+3 0x11111111_99999999_aaaaaaaa_bbbbbbbb 0x00000000
+3 0xcccccccc_dddddddd_eeeeeeee_ffffffff 0x00000000
+3 0x55555555_44444444_33333333_22222222 0x00000000
+
+# PATH2: Gif tag: registers: NOOP, A_D, XYZ2
+#        EOP = 1, nloop = 3 (truncated last quad )
+3 0x00000000_000005ef_34000000_00008003 0x00000000
+
+# PATH2: Data
+3 0x11111111_99999999_aaaaaaaa_bbbbbbbb 0x00000000
+3 0xcccccccc_dddddddd_eeeeeeee_ffffffff 0x00000000
+3 0x55555555_44444444_33333333_22222222 0x00000000
+3 0x56565656_12121212_65436543_90909090 0x00000000
+3 0xffffffff_ffffffff_cccccccc_efefefef 0x00000000
+
+#----------------------------------------------------------
+# PATH3: Gif tag: 3 registers, EOP = 0, nloop = 2 (no trunc)
+4 0x00000000_00000412_34000000_00000002 0x00000000
+
+# PATH3: Data
+4 0x11111111_99999999_aaaaaaaa_bbbbbbbb 0x00000000
+4 0xcccccccc_dddddddd_eeeeeeee_ffffffff 0x00000000
+4 0x55555555_44444444_33333333_22222222 0x00000000
+
+# PATH3: Gif tag: registers: NOOP, A_D, XYZ2
+#        EOP = 1, nloop = 3 (truncated last quad )
+4 0x00000000_000005ef_34000000_00008003 0x00000000
+
+# PATH3: Data
+4 0x11111111_99999999_aaaaaaaa_bbbbbbbb 0x00000000
+4 0xcccccccc_dddddddd_eeeeeeee_ffffffff 0x00000000
+4 0x55555555_44444444_33333333_22222222 0x00000000
+4 0x56565656_12121212_65436543_90909090 0x00000000
+4 0xffffffff_ffffffff_cccccccc_efefefef 0x00000000
+
