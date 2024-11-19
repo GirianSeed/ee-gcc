@@ -1,0 +1,437 @@
+; Test vu0's access to vu1.
+; Also used to play with overlay debugging.
+
+; vu1 fp regs at 0x4000 - 0x41ff
+; vu1 int regs at 0x4200 - 0x42ff
+; vu1 ctrl regs at 0x4300 - 0x43ff
+
+.include "sce_macros.s"
+
+.text
+.DmaPackVif 0
+
+.global dma_start_vu0a
+dma_start_vu0a:
+
+DMAcnt *
+MPG 0, *
+
+	.func vumain0a
+vumain0a:
+
+; Load 42 into vi01.
+
+	nop	isub vi01, vi01, vi01
+	nop	iaddiu vi01, vi01, 42
+
+; Assign value to vu1's vi01 register.
+
+	nop	isub vi02, vi02, vi02		; vi02 = 0
+	nop	iaddiu vi02, vi02, 0x4210 / 16	; vi02 = 0x4210 / 16
+	nop	iswr.x vi01,(vi02)x
+
+; Load 1.0, 2.0, 3.0, 4.0 into vf01.
+
+	sub vf01,vf01,vf01 nop
+	nop loi 1.0
+	addi.x vf01,vf01,i nop
+	nop loi 2.0
+	addi.y vf01,vf01,i nop
+	nop loi 3.0
+	addi.z vf01,vf01,i nop
+	nop loi 4.0
+	addi.w vf01,vf01,i nop
+
+; Assign values to vu1's vf01,vf02,vf03 registers.
+; The latter two are to test sqd/sqi.
+
+	nop	nop
+	nop	isub vi02, vi02, vi02		; vi02 = 0
+	nop	iaddiu vi02, vi02, 0x4010 / 16	; vi02 = 0x4010 / 16
+	nop	sq.xyzw vf01,0(vi02)
+	nop	iaddiu vi02, vi02, 2		; set up for sqd -> vf02
+	nop	sqd.xyzw vf01,(--vi02)
+	nop	iaddiu vi02, vi02, 1		; set up for sqi -> vf03
+	nop	sqi.xyzw vf01,(vi02++)
+
+; Done, terminate.
+
+	nop   	 nop
+	nop   	 nop
+	nop   	 nop
+	nop   	 nop
+
+	nop[e]	 nop   
+	nop   	 nop
+ 
+	.endfunc  
+
+.endmpg
+MSCAL 0
+.EndDmaData
+
+DMAend
+
+; **********************************************************
+
+.global dma_start_vu0b
+dma_start_vu0b:
+
+DMAcnt *
+MPG 0, *
+
+	.func vumain0b
+vumain0b:
+
+; Put address of vu1's vi02 register in our vi08 register.
+
+	nop	isub vi08, vi08, vi08		; vi08 = 0
+	nop	iaddiu vi08, vi08, 0x4220 / 16	; vi08 = 0x422
+
+; Copy vu1's vi02 to our vi02 and store at address 0x400.
+; Code in r5900 space will test whether we succeeded or not.
+
+	nop	ilw.x vi02, 0(vi08)
+	nop	isub vi08, vi08, vi08		; vi08 = 0
+	nop	iaddiu vi08, vi08, 0x400 / 16	; vi08 = 0x400 / 16
+	nop	nop				; wait 1 cycle, vi02 not ready
+	nop	isw.x vi02, 0(vi08)
+
+; Put address of vu1's vf04 register in our vi08 register.
+
+	nop	isub vi08, vi08, vi08		; vi08 = 0
+	nop	iaddiu vi08, vi08, 0x4040 / 16	; vi08 = 0x404
+
+; Copy vu1's vf04,5,6 to our vf04,5,6 and store at address 0x410.
+; Code in r5900 space will test whether we succeeded or not.
+
+	nop	lq.xyzw vf04, 0(vi08)
+	nop	iaddiu vi08,vi08, 1		; set up for lqi -> vf05
+	nop	lqi.xyzw vf05, (vi08++)
+	nop	iaddiu vi08,vi08, 1		; set up for lqd -> vf06
+	nop	lqd.xyzw vf06, (--vi08)
+
+	nop	isub vi08, vi08, vi08		; vi08 = 0
+	nop	iaddiu vi08, vi08, 0x410 / 16	; vi08 = 0x410 / 16
+	nop	sqi.xyzw vf04, (vi08++)
+	nop	sqi.xyzw vf05, (vi08++)
+	nop	sqi.xyzw vf06, (vi08++)
+
+
+; Done, terminate.
+
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	nop
+
+	nop[e]	 nop   
+	nop   	 nop 
+
+	.endfunc
+
+.endmpg
+MSCAL 0
+.EndDmaData
+
+DMAend
+
+; **********************************************************
+
+.global dma_start_vu1
+dma_start_vu1:
+
+DMAcnt *
+MPG 0, *
+
+	.func vumain1
+vumain1:
+
+; Copy vi01 (which should contain 42) to vi02.
+
+	nop	isub vi02, vi02, vi02
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	iadd vi02, vi02, vi01
+
+; Copy vf01,2,3 (which should contain 1.0, 2.0, 3.0, 4.0) into vf04,5,6.
+
+	nop	move.xyzw vf04,vf01
+	nop	move.xyzw vf05,vf02
+	nop	move.xyzw vf06,vf03
+
+; Done, terminate.
+
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	nop
+
+	nop[e]	 nop   
+	nop   	 nop
+ 
+	.endfunc  
+
+.endmpg
+MSCAL 0
+.EndDmaData
+
+DMAend
+
+; Test vu0's access of vu1 control regs.
+
+.global dma_start_vu0a_ctrl
+dma_start_vu0a_ctrl:
+
+DMAcnt *
+MPG 0, *
+
+	.func vumain0a_ctrl
+vumain0a_ctrl:
+
+; Set vu1 status reg to all ones.
+
+	nop	isubiu vi01, vi00, 1
+	nop	iaddiu vi02, vi00, 0x4300 / 16
+	nop	iswr.x vi01,(vi02)x
+
+; Set vu1 clipping reg to all ones.
+
+	nop	isubiu vi01, vi00, 1
+	nop	iaddiu vi02, vi00, 0x4320 / 16
+	nop	iswr.x vi01,(vi02)x
+
+; Set vu1 R reg to all ones.
+
+	nop	isubiu vi01, vi00, 1
+	nop	iaddiu vi02, vi00, 0x4340 / 16
+	nop	iswr.x vi01,(vi02)x
+
+; Load 1.0 into vu1 I.
+
+	sub vf01,vf01,vf01 nop
+	nop	loi 1.0
+	addi.x vf01,vf01,i nop
+	nop	iaddiu vi02, vi00, 0x4350 / 16
+	nop	nop
+	nop	nop
+	nop	sq.x vf01,0(vi02)
+
+; Load 2.0 into vu1 Q.
+
+	sub vf02,vf02,vf02 nop
+	nop	loi 2.0
+	addi.x vf02,vf02,i nop
+	nop	iaddiu vi02, vi00, 0x4360 / 16
+	nop	nop
+	nop	nop
+	nop	sq.x vf02,0(vi02)
+
+; Load 3.0 into vu1 P.
+
+	sub vf03,vf03,vf03 nop
+	nop	loi 3.0
+	addi.x vf03,vf03,i nop
+	nop	iaddiu vi02, vi00, 0x4370 / 16
+	nop	nop
+	nop	nop
+	nop	sq.x vf03,0(vi02)
+
+; Done, terminate.
+
+	nop   	 nop
+	nop   	 nop
+	nop   	 nop
+	nop   	 nop
+
+	nop[e]	 nop   
+	nop   	 nop
+ 
+	.endfunc  
+
+.endmpg
+MSCAL 0
+.EndDmaData
+
+DMAend
+
+; **********************************************************
+
+.global dma_start_vu0b_ctrl
+dma_start_vu0b_ctrl:
+
+DMAcnt *
+MPG 0, *
+
+	.func vumain0b_ctrl
+vumain0b_ctrl:
+
+; Fetch vi10 (orig status == 0xfff) and current status in vi06.
+
+	nop	iaddiu vi01, vi00, 0x42a0 / 16 ; vi10 = 0x42a
+	nop	ilwr.x vi10, (vi01)
+
+	nop	iaddiu vi01, vi00, 0x4300 / 16
+	nop	ilwr.x vi06, (vi01)
+
+; Fetch mac flag in vi07.
+
+	nop	iaddiu vi01, vi00, 0x4310 / 16
+	nop	ilwr.x vi07, (vi01)
+
+; Fetch vi11 (orig clipping == 0xffffff) and current clipping in vi08.
+
+	nop	iaddiu vi01, vi00, 0x42b0 / 16 ; vi11
+	nop	ilwr.x vi11, (vi01)
+
+	nop	iaddiu vi01, vi00, 0x4320 / 16
+	nop	ilwr.x vi08, (vi01)
+
+; Fetch vf10x (orig R) and current R in vi09.
+
+	nop	iaddiu vi01, vi00, 0x40a0 / 16 ; vf10
+	nop	lq.x vf10, 0(vi01)
+
+	nop	iaddiu vi01, vi00, 0x4340 / 16
+	nop	ilwr.x vi09, (vi01)
+
+; Fetch vf11x (orig I) and current I in vf09.
+
+	nop	iaddiu vi01, vi00, 0x40b0 / 16 ; vf11
+	nop	lq.x vf11, 0(vi01)
+
+	nop	iaddiu vi01, vi00, 0x4350 / 16
+	nop	lq.x vf09, 0(vi01)
+
+; Fetch vf12x (orig Q) and current Q in vf08.
+
+	nop	iaddiu vi01, vi00, 0x40c0 / 16 ; vf12
+	nop	lq.x vf12, 0(vi01)
+
+	nop	iaddiu vi01, vi00, 0x4360 / 16
+	nop	lq.x vf08, 0(vi01)
+
+; Fetch vf13x (orig P) and current P in vf07.
+
+	nop	iaddiu vi01, vi00, 0x40d0 / 16 ; vf13
+	nop	lq.x vf13, 0(vi01)
+
+	nop	iaddiu vi01, vi00, 0x4370 / 16
+	nop	lq.x vf07, 0(vi01)
+
+; Done, terminate.
+
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	nop
+
+	nop[e]	 nop   
+	nop   	 nop 
+
+	.endfunc
+
+.endmpg
+MSCAL 0
+.EndDmaData
+
+DMAend
+
+; **********************************************************
+
+.global dma_start_vu1_ctrl
+dma_start_vu1_ctrl:
+
+DMAcnt *
+MPG 0, *
+
+	.func vumain1_ctrl
+vumain1_ctrl:
+
+; Copy I register to vf11.
+; Do this before we do anything else.
+; Setting of I register must wait until the end.
+
+	addi.x vf11x, vf00x, i	nop
+
+; Check if status register is all ones, store result in vi10.
+
+	nop	fseq vi10, 0xfc0
+
+; Check if the clipping register is all ones, store result in vi11.
+
+	nop	fceq vi01, 0xffff
+	nop	iaddiu vi11, vi01, 0
+
+; Set the clipping register to 0x5555.
+
+	nop	fcset 0x5555
+
+; Copy R register to vf10.
+
+	nop rget.x vf10, r
+
+; Set R register to 0x42
+
+	nop	iaddiu vi01, vi00, 0x42
+	nop	mfir.x vf01x, vi01
+	nop	rinit r,vf01x
+
+; Copy Q register to vf12.
+
+	addq.x vf12x, vf00x, q	nop
+
+; Set Q register to -2.0.
+
+	nop	loi 1.0
+	addi.x vf01, vf00, i	nop
+	nop	loi 0f-2.0
+	addi.x vf02, vf00, i	nop
+	nop	div q, vf02x, vf01x
+	nop	waitq
+
+; Copy P register to vf13x.
+
+	nop	mfp.x vf13x, p
+
+; Set P register to -3.0.
+
+	sub.xyzw vf01, vf01, vf01	nop
+	nop	loi 0f-1.0
+	addi.xyz vf01, vf01, i	nop
+	nop	esum p, vf01
+	nop	waitp
+
+; Set I register to -1.0.
+
+	nop	loi 0f-1.0
+
+; Set the mac register to 0x000e.
+
+	sub.xyzw vf01, vf01, vf01	nop
+	add.xyz vf01, vf01, vf01	nop
+
+; Set upper 6 bits of status register (the bits we can set with fsset)
+; to 101010
+
+	nop	fsset 0xa80
+
+; Done, terminate.
+
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	nop
+
+	nop[e]	 nop   
+	nop   	 nop
+ 
+	.endfunc  
+
+.endmpg
+MSCAL 0
+.EndDmaData
+
+DMAend

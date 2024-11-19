@@ -1,0 +1,63 @@
+; Test vu relocs.
+
+.include "sce_macros.s"
+
+	.section ".vudata", "aw"			; was .vu.data
+	.org 0x100
+fortytwo:
+
+.text
+.DmaPackVif 0
+
+.global dma_start_vu0
+dma_start_vu0:
+
+DMAcnt *
+MPG 0, *
+
+	.func vumain
+vumain:
+
+; Test R_MIPS_DVP_11_S4.
+
+	nop	iaddiu vi01,vi00,42
+	nop	isw.x vi01,(fortytwo-.vudata)(vi00)	; was just fortytwo
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	ilw.x vi01,(fortytwo-.vudata)(vi00)	; was just fortytwo
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	nop
+	nop	isw.x vi01,0x40(vi00)
+
+; Test R_MIPS_DVP_U15_S3.
+
+	nop	iaddiu vi01,vi00,jr_target
+	nop	jr vi01
+	nop	nop
+forever:
+	nop	b forever
+	nop	nop
+jr_target:
+	nop	nop
+
+; Done, terminate.
+
+	nop   	 nop
+	nop   	 nop
+	nop   	 nop
+	nop   	 nop
+
+	nop[e]	 nop   
+	nop   	 nop
+ 
+	.endfunc  
+
+.endmpg
+MSCNT
+.EndDmaData
+
+DMAend

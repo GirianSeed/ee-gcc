@@ -1,0 +1,30 @@
+# Quick SKY TESTS
+
+source $srcdir/$subdir/sky-defs.tcl
+
+# -------
+# Mainline
+
+if [istarget mips64*-sky-elf] {
+    # Run trace file tests
+    foreach trc [lsort [glob -nocomplain $srcdir/$subdir/*.trc]] {
+	# If we're only testing specific files and this isn't one of them,
+	# skip it.
+	if ![runtest_file_p $runtests $trc] {
+	    continue
+	}
+
+	run_trc_test $trc
+    }
+
+    # Run build/run file tests
+    foreach brn [lsort [glob -nocomplain $srcdir/$subdir/*.brn]] {
+	# If we're only testing specific files and this isn't one of them,
+	# skip it.
+	if ![runtest_file_p $runtests $brn] {
+	    continue
+	}
+
+	run_brn_test $brn
+    }
+}

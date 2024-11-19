@@ -1,0 +1,1604 @@
+1999-02-05  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-vu.c (vu0_write_cop2_register): Fix interpretation
+	of VU FBRST control bit.
+
+1999-01-04  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-gdb.c (sky_sim_engine_halt): Set CIA here as before.
+
+1998-12-30  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-gdb.c (sky_sim_engine_halt): Do not set CIA here.
+
+Thu Dec 17 14:40:25 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* sky-libvpe.c (Lower_special): Update MTIR insn, format changed.
+	* sky-vudis.c (mftir): Update output, format of mtir changed.
+
+1998-12-08  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sim-main.h (sim_state): Add multi-phase load tracking fields.
+	* sky-gdb.c (sky_option_handler): Add --load-next option handling.
+	* mips.igen (BREAK): Add multi-phase load and printf code handling.
+	
+Thu Oct 29 11:21:37 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-libvpe.c: Added SKY_FUNIT guards and dummy variables for
+	successful build --without-sim-funit.
+
+Tue Oct 13 13:46:29 EDT 1998 Frank Ch. Eigler <fche@cygnus.com>
+  
+	* sky-libvpe.c (initvpe,move_pipe): Value of constant register
+	VF00 changes to (0,0,0,1).
+
+Tue Oct 6 14:07:01 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+  
+	* sim-main.h (GPR1_SET): Added this definition for PR17667 to set
+	the upper 64-bits of a register.
+  
+Tue Oct 05 09:54:54 1998  Patrick Macdonald  <patrickm@cygnus.com>
+  
+	* Makefile.in (SIM_IGEN_OBJ): replaced engine.o with a 
+	configurable parameter (mips_igen_engine)
+	* configure.in: added mips_igen_engine to allow different engine_run
+	objs to be included in the libsim.a archive.  Sky is blank (defaults to
+	sky-engine.c), non-sky is engine.o (from igen's engine.c)
+	* configure: regenerated file
+	* sky-gdb.c (sky_open_file): set the buffer size to 2k as a buffer
+	size of zero causes portability problems
+  
+Thu Sep 24 11:50:57 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+  
+	* sky-libvpe.c (FMAdd, FMSub): Added back a volatile temporary
+	required to get the correct results on Linux for test cases:
+	sce2_test12, sce_test14, sce_test16, sce_test18, sce_test20, sce_test22.
+	It was accidentaly removed with the recent floatie changes.
+  
+Tue Sep 22 16:53:51 1998  Frank Ch. Eigler  <fche@cygnus.com>
+  
+	* sky-libvpe.c (T2H_F4): Fix endianness goof.
+  
+Tue Sep 22 14:11:10 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+  
+	* sky-gdb.c: Removed the gif and vif sub-options from -log for
+	TARGET_SKY_B.  They exposed things outside of the subB contract.
+  
+Mon Sep 21 18:15:59 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+  
+	* sky-libvpe.c: In a number of places:
+	1/ insns that modify the acc were not setting overflow correctly.
+	2/ the Exxx insns should not modify the status flags.
+	
+Sun Sep 20 23:14:02 1998  Ron Unrau  <runrau@cygnus.com>
+
+	* sky-gdb.c (vif_option_handler): don't allow start_pc to go negative
+
+Fri Sep 18 15:12:57 1998  Doug Evans  <devans@canuck.cygnus.com>
+  
+	* sky-libvpe.c (FDiv_Stat): Fix typo.
+	(get_ctrlreg): Replaces get_{int,float}_ctrlreg.  All callers updated.
+	(set_ctrlreg): Replaces set_{int,float}_ctrlreg.  All callers updated.
+
+Fri Sep 18 13:12:42 1998  Frank Ch. Eigler  <fche@cygnus.com>
+ 
+	* sky-libvpe.c (OPMSUB): Correct multiply operands.
+	Sort of update apipe.acc_oflw too.
+	(hazardcheckP): Clear EFU stall one cycle earlier for
+	WAITP than for other EFU operations.
+	(move_pipe): Move around and expand apipe debug message.
+       
+Thu Sep 17 18:30:37 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-vpe.h (union floatie): New type to store non-IEEE
+	float values. (struct *): Convert pipeline fields to
+	use floatie instead of float.
+	* sky-vu.h (struct *): Adapt fields to floatie here too.        
+	* sky-interact.c (*): Half-hearted conversion to floatie.
+	* sky-vu.c (*): Half-hearted converstion to floatie.
+	* sky-libvpe.c: Use sim-assert.h; convert to ASSERT()
+	throughout.
+	(T2H_F4): New function for safe union poking.
+	(*): Replaced all computations on float types with safe
+	floatie operations.  Eliminated much ugly casting between
+	`* (int*) &(float)' and `* (float*) & (int)'.
+	(*): Temporarily disabled a number of debugging messages
+	from "inst_trace2" that used above ugly casts.
+	(ADD[xyzw]): Correct status field to be updated.
+	(move_pipe): Extra debugging message for apipe.
+
+Wed Sep 16 20:22:38 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sky-libvpe.c (Lower_special): Initialize acc_oflw bit.
+
+Wed Sep 16 19:38:03 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sky-vudis.c (fmand()): Arguments to RMEQ, FMAND, FMOR were
+	disassembled in reversed positions.
+
+Wed Sep 16 16:19:05 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-libvpe.c (enum operation): Add all other missing enums from
+	funit library, for compiling without FUNIT.
+	(FCmp): New function to compare floats using funit library.
+	(MAX*, MIN*, elsewhere): Use FCmp() instead of float < and >.
+	(i_2_f, f_2_i): Use unsigned ints to preserve sign.
+	(FMEQ, FMAND, FMOR): Check for hazards on input VInn.
+	(IBEQ): More debugging output.
+	(FAbs): Removed unreachable code.
+ 
+	* sky-libvpe.h: Removed dependency on funit library "wf.h".
+      
+Wed Sep 16 18:14:15 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sky-libvpe.c (mostly in exec_inst() and move_pipe()), sky-vpe.h,
+	* sky-vu.h: Many, scattered changes to get "level2" test cases to work.
+	Primarily: add accumulator overflow flag (acc_oflw) to
+	state information, and changes to the way the status flags are updated.
+	* sky-interact.c, sky-vif.c, sky-vudis.c, sky-vudis.h:
+	Added a parameter to opcode_analyze() to allow for inst_trace_columns.
+
+Tue Sep 15 13:00:44 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-libvpe.c: (hazardcheckMEM): New function to check for
+	pending MEM writes.
+	(exec_inst: LQI, LQD, ILWR, LQ, ILW): Call it.
+	(exec_inst: SQ): Fix ft/fs confusion in hazard check.
+	(exec_inst: MR32): Correct dest-field hazard check.
+	(move_pipe): Add ipipe debugging message.
+	(hazardcheck, hazardcheckFTF): Include MFP target register in
+	ordinary hazard checks.
+	(hazardcheck*): Fix logic of source/destination field checks to
+	consider "read & write" conditions instead of "read | write".
+
+Mon Sep 14 20:04:34 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	* sky-vu.h (VU0_VU1_REG_START,VU0_VU1_CTRLREG_{START,SIZE}): Define.
+	* sky-libvpe.c (get_{int,float}_ctrlreg): New functions.
+	(set_{int,float}_ctrlreg): New functions.
+	(Lower_special,exec_inst,move_pipe): Handle accesses of vu1 control
+	regs from vu0.
+	
+Wed Sep 9 11:28:20 1998  Ron Unrau <runrau@cygnus.com>
+
+	* sky-gdb.[ch]: add sim pipeorder command
+
+Tue Sep 8 18:36:45 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sky-dma.c (do_dma_transfer): PR17171: Sense of test for
+	DMA_Dn_CHCR___DIR was reversed.
+
+Tue Sep 8 17:57:36 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sky-libvpe.c (FIntConv): Casts for FTOI cases were in wrong position.
+	Also made VI/VF reg names consistent in debug dumps.
+
+Thu Sep  3 19:30:27 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-libvpe.c (FIntConv): New function for accurate
+	ITOF / FTOI instructions.  (move_pipe): More verbosity.
+
+Thu Sep  3 12:11:10 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-libvpe.c (hazardcheck*): Disable hazard checks
+	for VF0 and VI0.  (move_pipe): Perform lower insn
+	retirement before upper insn, to give upper stage priority
+	in case of ties (writing to the same register).
+
+	(hazardcheckVI): Check hazards for load-destination 
+	registers. (hazardcheck): Print more precise messages during
+	verbose hazard detection.  Exclude check of current pipeline
+	stage in hazard detection, since concurrent upper & lower
+	instructions do not conflict.
+       
+Thu Sep  3 10:34:09 EDT 1998 Frank Ch. Eigler <fche@cygnus.com>
+ 
+	* sky-libvpe.c: (*) Added occasional verboser tracing.
+	(move_pipe): Reset VF0 an VI0 values after potential
+	overwrite.
+
+Fri Aug 28 08:51:42 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-libvpe.c (FSqrt_Stat): Correct handling of negative
+	sqrt argument in host float mode.
+
+Mon Aug 24 12:12:12 1998  Ian Carmichael     <iancarm@cygnus.com>
+ 
+	* sky-libvpe.c (FAbs): New function for correct handling of
+	VU ABS instruction.  (Upper_special) Call it.  (*) Other
+	mystery changes related to a VF pipe.status field.
+
+Thu Aug 20 14:29:29 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+	* sky-gs.[c|h]: initialize and open (if not already open)
+	GS before writing to registers, modify address map
+	* sky-gpuif.c: remove reference to 5900
+
+Thu Aug 20 10:44:20 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+ 
+	* sky-vu.c: Some of the routines had to be re-enabled for skyb
+	to permit reading of the VPU STAT register in particular.
+ 
+Wed Aug 19 12:29:39 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* sky-gdb.c: Enclosed several references to vif0_device and
+	vu0_device in #ifndef TARGET_SKY_B / #endif
+
+Tue Aug 18 12:12:55 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-vif.c (vif_issue): Fixed VIF1-only instruction checks:
+	DIRECT/DIRECTHL (VIF1-only), MSCAL (VIF0 & VIF1).
+
+Mon Aug 17 15:15:48 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+	Disable vu0/vif0 support for skyb.
+	* interp.c (sim_store_register): Disallow writes to vu0/vif0 regs.
+	(sim_fetch_register): Ditto for reading.
+	(cop_lq,cop_sq): #ifdef out if TARGET_SKY_B.
+	(decode_coproc): Ditto for cop2 regs.
+	* sky-engine.c (device_issue): Make static.
+	* sky-libvpe.c (exec_inst): Ignore d/t bits.
+	* sky-vif.c (vif0_device): #ifdef out if TARGET_SKY_B.
+	(vif0_attach,vif0_issue,vif0_reset): Make no-op if TARGET_SKY_B.
+	* sky-vif.h (vif0_device): #ifdef out if TARGET_SKY_B.
+	* sky-vu.c (vu0_device): #ifdef out if TARGET_SKY_B.
+	(vu0_attach,vu0_issue,vu0_reset): Make no-op if TARGET_SKY_B.
+	(vu0_busy,vu0_q_busy,vu0_macro_issue): #ifdef out if TARGET_SKY_B.
+	(vpu_stat): Ditto.
+	(read_vu_special_reg): Return 0 for vu0 regs if TARGET_SKY_B.
+	(write_vu_special_reg): Ignore writes to vu0 regs if TARGET_SKY_B.
+
+	* sky-vu.h (vu0_device): #ifdef out if TARGET_SKY_B.
+	(vu0_busy,vu0_q_busy,vu0_macro_issue): Ditto.
+	(vu0_micro_interlock_released,vu0_micro_interlock_clear): Ditto.
+	(vu0_read_cop2_register,vu0_write_cop2_register): Ditto.
+
+Wed Aug 12 15:25:19 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-gdb.c (*): Added "sim reset" command to soft-reset sky
+	peripherals.  Also reset multi-phase loading.
+	* sky-dma.[ch] (dma_attach, dma_reset): Moved reset code
+	into from former into latter new function.
+	* sky-gpuif.[ch] (gif_io_write_buffer, gif_reset): Ditto, WIP.
+	* sky-gs.[ch] (gs_reset): Ditto, except new function is only
+	a placeholder.
+	* sky-vif.[ch] (vif*_reset): New entry points for old reset
+	functions. (vif_attach): Don't allocate VU tracking tables here.
+	* sky-vu.[ch] (vu_attach, struct vu_config): Allocate VU tracking 
+	tables here.
+	* sky-vu.[ch] (vu*_reset): New functions.
+	* sky-libvpe.c (initvpe): Clear more state.
+
+	* sky-dma.c (error): Corrected assertion polarity.
+	(do_dma_transfer): Fix suspected thinko in error check.
+
+Wed Aug 12 1:31:13 1998  Ron Unrau  <runrau@cygnus.com>
+
+	* interp.c (sim_store_register): enable writing COP0 registers
+	* sky-gdb.h: define print vector order enum
+	* sky-gdb.c (vu_option_handler): use order enum
+	* sky-interact.c (print_mask): check print vector order flag
+ 
+Wed Aug 12 7:18:29 1998  Ron Unrau  <runrau@cygnus.com>
+
+	* sim-main.h: track COP0 additions to NUM_REGS
+	* interp.c: read COP0 registers
+	* sky-gdb.c: hide "sim pipe vu0" and "sim list vif0" for SKYB
+
+Tue Aug 11 13:58:09 1998  Frank Ch. Eigler  <fche@cygnus.com>
+ 
+	* sky-vif.c (vif_fifo_flush, vif_fifo_fit, vif_fifo_access,
+	vif_fifo_old): Use arrays of quadwords instead of quadword pointers
+	to represent PKE FIFOs.
+	* sky-vif.h (struct vif_fifo): Matching declaration change.
+
+	* sky-vif.[ch]: New files, renaming PKE->VIF.  
+	* sky-pke.[ch]: Removed.
+	* Makefile.in: Compile new file.
+	* interp.c: Rename PKE->VIF references.
+	* sky-dma.c: Ditto.
+	* sky-engine.c: Same.
+	* sky-gdb.c: Same.
+	* sky-gpuif.[ch]: Same. 
+	* sky-hardware.c: Last one.     
+
+Mon Aug 10 18:59:42 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* configure.in (mips64el-skyb-elf): added new target
+
+Mon Aug 10 17:07:06 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-pke.h (*): Use more enums in favour of #defines.
+	* sky-pke.c (pke_issue): Use switch to decode PKEcode.
+	* interp.c (decode_coprocessor): Remove litter.
+	
+Mon Aug 10 13:09:23 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+	Update sim-pipe display.
+	* sky-gdb.c(gdb_vu_pipeorder): New.
+	(OPTION_VU_PIPE_ORDER): New.
+	(vu_option_handler): Support VU_PIPE_ORDER.
+	(vu_option_table): Add pipe-order.
+	* sky-gdb.h: Add extern for gdb_vu_pipeorder.
+	* sky-interact.c (print_vector): support xyzw and wzyx.
+	(print_pipe): Print instruction address instead of pipe.
+	* sky-libvpe.c: Add instruction pc to pipelines.
+	* sky-vpe.h: Ditto.
+
+Thu Aug 6 14:01:02 1998  Ron Unrau <runrau@cygnus.com>
+
+	* sim-main.h: track COP2 register definitions, define VIO_BASE
+	* interp.c (sim_{fetch,store}_register): read/write VU0/1 control regs
+	* sky-gdb.c: use VIO_BASE
+	* sky-pke.h: move GDB_COMM area
+
+Tue Aug 4 10:55:42 1998  Ron Unrau <runrau@cygnus.com>
+
+	* sky-gdb.c: recognize DMA insns as 8-bytes long (for disassembly)
+
+Fri Jul 31 16:02:20 1998  Ron Unrau <runrau@cygnus.com>
+
+	* sim-main.h: shadow NUM_CORE_REGS from tm-txvu.h
+	* interp.c: use NUM_CORE_REGS
+	* sky-gdb.c (set_fifo_breakpoints): use VIF interrupt bit for break
+	* sky-pke.c (pke_issue): use interrupt bit for break points
+
+Wed Jul 29 12:23:23 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+	* sky-pke.c (pke_code_direct): massage the gif quadword to
+	ensure consistent ordering when passing to gif_disassemble_pke_data(),
+	corrected the determination of DIRECT vs DIRECTHL for log trace
+	* sky-gpuif.c (gif_disassemble_pke_data): Remove unnecessary target to
+	host translation of gif data from pke 
+
+Fri Jul 24 16:35:10 1998  Ron Unrau  <runrau@cygnus.com>
+
+	* sim-main.h: track tm-txvu.h changes
+	* interp.c: use NUM_CORE_REGS instead of NUM_R5900_REGS
+	* sky-pke.c: use interrupt bit for VIF breakpoints
+	* sky-gdb.c: qualify bp cache entries by VIF/VU type
+	  (set_fifo_breakpoints): use insn type from bp cache instead of
+	  FIFO. Also, use interrupt bit for VIF breakpoints
+
+Fri Jul 24 13:46:00 1998  Patrick Macdonald  <patrickm@cygnus.com>
+ 
+	* interp.c: added support for optional display of options
+	* sky-gdb.c: same
+	* sky-gpuif.c: replace printf with sim_io_printf, changed
+	gif disassembly file name default to gif.dvpasm
+	* sky-gs.c: replace printf with sim_io_printf/sim_io_eprintf
+	* sky-pke.c: changed vif[01] disassembly file name default
+	to vif[01].dvpasm
+
+Thu Jul 23 16:37:33 1998  Ian Carmichael  <iancarm@cygnus.com>
+	
+	* sky-interact.c (sim_pipe): New pipeline display.
+	
+Fri Jul 17 13:07:37 1998  Jillian Ye <jillian@cygnus.com>
+
+	* sky-libvpe.c: Forward fitting Ian's workaround for a 98r1 bug
+	  from sky-980617 branch.
+    
+Thu Jul 16 11:55:06 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* interp.c (decode_coproc): Fix QMFC2/QMTC2 for both endian hosts.
+
+
+Tue Jul 14 10:15:37 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+	* r5900.igen (r59fp_opsqrt, r59fp_opdiv): Without WITH_SKY_FUNIT three
+	calls to sim_fpu_fpto() should have been to r59fp_unpack().
+
+Thu Jul 13 12:35:20 1998  Ron Unrau  <runrau@cygnus.com>
+
+	* sim-main.h: Define MODULE_LIST for resume/suspend install
+	* sky-gdb.c (sky_sim_module_install): install suspend/resume modules
+	* (resume_handler/suspend_handler): new functions
+
+Thu Jul  9 15:08:05 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+	* sky-libvpe.c: Work-around for broke fp math on x86 platforms.
+ 
+Wed Jul 8 11:45:55 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+ 
+	* sky-dma.c: Clarify a comment.
+
+Fri Jun 26 15:47:43 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* interp.c (decode_coproc): Big-endian-only workaround for t-cop2b
+	test case failures.  Adjust QMFC2 and QMTC2 instructions only.
+	
+Fri Jun 26 15:35:17 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+	* 5900.igen (CVT.S.W, CVT.W.S): For WITH_SKY_FUNIT, integer->single
+	and single->integer conversions were backwards.
+
+Fri Jun 26 13:40:12 1998  Ron Unrau  <runrau@cygnus.com>
+
+	* sky-gdb.c: fix VU breakpoints stuck in the FIFO
+
+Thu Jun 25 14:55:00 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+	* sky-pke.c (pke_issue): use default trace file name if the
+	--log-file option not used
+        
+Thu Jun 25 11:53:32 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* sky-pke.c (pke_issue): Reorder PKEcode decode tests for slightly
+	better performance.
+	(pke_code_*): Disassemble [i] (interrupt) bit in PKEcode.
+	(pke_code_unpack): Fix disassembly for scalars (V1_8 -> S_8).
+	Handle [r] option disassembly.
+
+	* sky-pke.c (pke_reset): Retain trace file.  Explain why.
+
+Thu Jun 25 13:27:25 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+	* sky-gpuif.c (gif_io_read_buffer): do not close debug/trace/
+	disassembly files on a reset (pump out a message instead), 
+	correct comment typos
+	* sky-gpuif.c (gif_output_giftag): don't send out a newline
+	to pke, eye candy modifications
+	* sky-gpuif.h: correct comment typo, don't send disassembly 
+	to stdout
+
+Wed Jun 24 19:00:07 1998  Frank Ch. Eigler  <fche@cygnus.com>
+	
+	* sky-pke.c (pke_issue, pke_code_*): Add PKE disassembly function.
+	* sky-gpuif.c (gif_disassemble_pke_data): Adjust disassembly
+	format slightly.
+	* sky-pke.h: Rearrange function declarations slightly.
+	* sky-vudis.c (*): Adjust disassembly format to match input of
+	dvp assembler.
+
+Wed Jun 24 18:25:05 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+	* sky-libvpe.c (init_vpe): Make fast mode the same on
+	all platforms.  Use standard ieee.
+
+Wed Jun 24 14:16:34 1998  Ron Unrau  <runrau@cygnus.com>
+
+	* sky-gdb.c (vif_option_handler): show data counts and source address.
+	  Also, cover end conditions and illegal input.
+
+Wed Jun 24 11:03:04 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+	* sky-gdb.c: flag --list-vifx and --pipe as interactive
+	options only
+
+Wed Jun 24 12:44:12 1998  Jillian Ye  <jillian@cygnus.com>
+ 
+	* configure.in: added -lm to mips_extra_libs
+	fix (looking for X11 libs properly).
+	* configure re-generated.
+
+Tue Jun 23 12:49:53 1998  Jillian Ye  <jillian@cygnus.com>
+
+        * configure.in: Add -lXext to mips_extra_libs
+
+Tue Jun 23 12:36:01 1998  Patrick Macdonald  <patrickm@cygnus.com>
+	* sky-gpuif.[c|h] (gif_disassemble_pke_data): new function for
+	disassembling GIFtags/data from the PKE when --log vif1=on, added
+	pointer to GIF_path in GIF_devicefull so PKE could use common 
+	formatting routines 
+
+Mon Jun 21 10:50:00 1998  Patrick Macdonald <patrickm@cygnus.com>
+
+	* sky-dma.h, sky-gpuif.[c|h], sky-gs.h, sky-pke.[c|h],
+	sky-vu.h: use _IOLBF on debug files, _IOFBF on trace files
+	* sky-gdb.[c|h] (sky_open_file()): add buffer mode to 
+	parameter list
+
+Thu Jun 18 17:48:01 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+	* mips.igen (SDC2): Removed R5900 alternative.
+	* r5900.igen (SQC2): Updated bit pattern to
+ 	match changed R5900 specs.
+
+Thu Jun 18 15:35:35 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+	* sky-gs.[c|h]: replace GS_full with gs_device for commonality
+	* sky-gpuif.[c|h]: replace GIF_full with gif_device for commonality
+	* sky-gpuif.c: add final disassembly code and comments, allow IMT
+	GIFtags to be disassembled differently
+	* sky-gdb.[c|h]: start the command option enum at 1, modify 
+	to use gs_device and gif_device
+	* sky-vu.[c|h]: remove debug_trace and debug_trace_file name
+	initialization from vu_attach, initialize the above at struct
+	allocation, phase 3 of --sky-debug finished
+
+Wed Jun 17 19:29:29 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gs.[c|h] (gs_options): new function, added common
+        debug code and macros
+        * sky-gdb.[c|h]: added calls to gs_options() and dma_options(),
+        added common option enum
+        * sky-gpuif.[c|h]: use common enum values, remove gif specific
+        case label defines
+        * sky-dma.[c|h] (dma_options): new function, modified dma
+        device structure to contain file pointer and name, extern the
+        struct as well, added macro for dma debug file open, use the
+        macro in conjunction with first indebug() call in a function
+        * sky-pke.[c|h]: use common enum values, remove vif specific
+        case label defines
+        * sky-vu.[c|h]: use common emun values, remove vu specific
+        case label defines 
+        * sky-libvpe.c: added macro for debug file open, use macro
+        upon entry to function, modified indebug() printfs to 
+        fprintfs 
+
+Wed Jun 17 14:40:07 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * mips.igen(BC0*), sky-dma.c, sky-engine.c(cpu_issue):
+        BC0F/FL/T/TL must act on CPCOND0 *prior* to the previous insn.
+
+
+Wed Jun 17 10:34:34 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-pke.h: PKE_REG_MASK_SET / PKE_MEM_WRITE macros updated
+        to check/open the debug trace file 
+         
+Tue Jun 16 16:50:01 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gdb.[c|h] (sky_open_file): New function
+        * sky-gdb.[c|h] (sky_store_file_name): New function
+        * sky-gdb.c: added new functions for common operations, added
+        vux, vifx and gs to list of debug/trace files
+        * sky-gdb.h: support for the above
+        * sky-gpuif.[c|h]: support for the debug and log command options,
+        gif disassembly
+        * sky-gs.[c|h]: support for the debug command options
+        * sky-pke.[c|h] (pke_options): New function
+        * sky-pke.c: support for the debug and log commands
+        * sky-vu.[c|h] (vu_options): New function
+        * sky-vu.c: support for the debug command options
+                
+Tue Jun 16 14:21:40 MDT 1998  Ron Unrau  <runrau@cygnus.com>
+
+        * sky-pke.c(read_pke_pc): return source address of current pc
+        * sky-pke.c(read_pke_pcx): return index of current pc
+        * sky-pke.h: export read_pke_pcx
+        * interp.c(sim_fetch_registers): read pke pc/pcx
+        * sky-libvpe.c: track name change from GDB
+        * sim-main.h: add vif memory based pc
+          - extend gdb comm area for fifo breakpoints
+          - define SIM_ENGINE_RESTART_HOOK
+        * sky-gdb.c: add support for VIF breakpoints
+
+Tue Jun 16 14:11:04 EDT 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * mips.igen(BC0*): Fix unresolved external error for sky_cpcond0
+        on non-SKY builds.
+
+Tue Jun 16 11:44:52 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * Implement remaining bits in VPU_STAT, CMSAR0, CMSAR1, FBREAK.  Make
+        COP2 interface to VI registers work.
+        * sky-vu.c (vpu_stat): New function.
+        * sky-vu.c (vu0_read_cop2_register, vu0_write_cop2_register): New
+        functions.
+        * interp.c (decode_coproc, case CFC2, case CTC2): Use new
+        functions from sky-vu.c, above.
+        * sky-vu.c (read_vu_special_reg, write_vu_special_reg): Also changed to
+        use vu0_read|write_cop2_register.
+        * sky-vu.h (COP2_REG_*): New enum for COP2->VI index.
+        (VPU_STAT): Renamed to VPU_STAT_ADDR.
+        * sky-pke.h (COP2_REG_STAT_ADDR): VPU_STAT renamed to VPU_STAT_ADDR.
+
+        * Clean up vu initialization code.
+        * sky-vu.c (initialize_and_run): New function.
+        * sky-vu.c (vu0_macro_issue, write_vu_special_reg): Called from here.
+
+        * sim-main.c (address_translation): Cleaned up a little.  No change in
+        behaviour.
+
+Mon Jun 15 15:49:22 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-vu.c ({read,write}_vu_register_window): Double work array
+        size to prevent bounds overrun.
+        * sky-dma.c (*): Replace `assert()' with `ASSERT()'.
+        * sky-vu.c: Ditto.
+
+Mon Jun 15 13:22:49 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * mips.igen (bc0*), sky-dma.c (): Implement CPCOND0 and
+        the instructions to test it (BC0F/BC0FL/BC0T/BC0TL).
+
+
+Mon Jun 15 10:33:42 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (exec_inst): Change '&' -> '&&' to fix 
+        conditional.
+
+Sun Jun 14 10:51:30 1998  Ron Unrau  <runrau@cygnus.com>
+
+        * sky-engine.c: Set ordering of device issues to match enumerated type
+        txvu_cpu_context (sim-main.h tm-txvu.h). This also allowed the issue
+        structure to be simplified to an array of functions.
+
+Fri Jun 12 21:12:09 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c: Fix add-branch handling.
+        (initvpe): old_reg must be set to -1 when invalid.
+        (exec_inst): Use ipipe.flag=2 to identify ADD/SUB instruction.  Removed
+        most of the rest of the code related to add/branch, which was doing 
+        the wrong thing anyway.
+        (move_pipe): Change ipipe handling to set old_reg, old_value when
+        flag==2.
+
+        * sky-libvpe.c: Fix D,T bit reads for VU1.
+        (exec_inst): Check device number to determine correct D,T enable bits 
+        in FBRST.  Remove clumsy memory-read for FBRST register.
+
+        * sky-vu.c: Start to fix cop2 register reads.  Needs interp.c 
+        change too.
+        (vu0_read_cop2_register, vu0_write_cop2_register): Added.
+        (write_vu_special_register case VU_REG_CIA): Reset D,T flag on restart.
+        * sky-vu.h (vu0_read_cop2_register, vu0_write_cop2_register): Added.
+
+        * sky-vu.c: Implement a few more bits of vpu_stat register.
+        (vpu_stat): Added.
+        (read_vu_special_reg): Use vpu_stat().
+        * sky-vu.h (VPU_STAT_VGS1_BIT): Fixed name.
+
+Fri Jun 12 14:43:42 1998  Patrick Macdonald  <patrickm@cygnus.com>
+        
+        * interp.c (sim_close): added to sky_command_option_close() to
+        close any trace file handles
+        * sky-gdb.[c|h]: added sky_command_option_close(); added
+        partial body to log and log file command line option (gif only)
+        * sky-gpuif.[c|h]: added log file disassembly support ( not in
+        final form, requires 5900 stuff ) 
+
+Thu Jun 11 16:13:50 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-dma.c(do_dma_transfer): Implement DMA end irpt by adding a call
+        to the new routine sky_signal_interrupt().
+
+Thu Jun 11 13:31:40 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-interact.c, sky-libvpe.c, sky-vu.[ch]:
+        _vpepc & pc were redundant -- removed _vpepc.
+
+Wed Jun 10 14:27:30 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-libvpe.c(vpecallms_cycle): Continue after stop via E/D/T
+        skipped an insn.
+
+Wed Jun 10 13:22:32 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-device.c (sky_signal_interrupt): New function to generate
+        interrupt event.
+        * sky-device.h: Declare it.
+        * sky-dma.c (check_int1): Call it.
+        * sky-pke.c (pke_begin_interrupt_stall): Call it.
+
+Wed Jun 10 10:59:57 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+        * sky-libvpe.c (move_pipe): Handle ISWR as well as ISW.
+
+        * sky-vu.h (VU0_VU1_FPREG_START,VU0_VU1_FPREG_SIZE): New macros.
+        (VU0_VU1_INTREG_START,VU0_VU1_INTREG_SIZE): New macros.
+        * sky-libvpe.c (mem_range_check): New arg `me'.  All callers updated.
+        (mem_range_error): New function.
+        (get_VF,get_VI): New functions.
+        (Lower_special, case LQI,LQD): Handle reads of vu1 fp regs from vu0.
+        (exec_inst, case LQ): Ditto.
+        (Lower_special, case ILWR): Handle reads of vu1 int regs from vu0.
+        (exec_inst, case ILW): Ditto.
+        (move_pipe, case P_MEMORY): Handle writes of vu1 int/fp regs from vu0.
+
+Wed Jun 10 11:40:40 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * interp.c (sim_open): add call to sky command handler,
+        moved all sky command option defines and existing logic to
+        sky-gdb.c
+        * sky-gdb.c (gdb_attach): new function (consisent with other
+        component attach functions)
+        * sky-gdb.c (sky-command-options): new function.  Add the
+        commands to the option table
+        * sky-gdb.h: new file.  Externalize prototypes for the new
+        sky-gdb.c functions
+        * sky-hardware.c (register-device): added gdb_attach() to the
+        calling sequence and removed the option table updates.
+        * sky-gpuif.c: replaced DEBUG flag conditionals with calls to
+        indebug() and expanded the gif specific command option routine
+        * sky-gpuif.h: added trace file and screen refresh to the
+        valid gif options
+        * sky-gs.c: replaced DEBUG flag conditionals with indebug()
+        * sky-indebug.[c|h]: modified indebug function body and added
+        global variable for debug string storage
+          
+Wed Jun 10 11:07:20 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-vu.h: Forgot to checkin this as part of yesterday's change.
+
+Tue Jun  9 16:52:10 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-vpe.h, sky-libvpe.c, sky-interact.c:
+        Add support for new rule re: an integer add/sub followed by a
+        data-dependant branch insn.
+
+Mon Jun  8 18:25:00 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-libvpe.c(fetch_inst,exec_inst): Fix terminal PC value
+        when D or T bit set.  Add delay slot for E bit insn
+        followed by a branch.
+
+Mon Jun  8 15:45:00 1998  Ron Unrau  <runrau@cygnus.com>
+
+        * sky-engine.c(engine_run): Issue to all devices at least once before
+          checking events.
+        * sky-gdb.c(sky_sim_engine_halt): Check last before setting cia
+
+Fri Jun  3 11:22:33 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gpuif.c: support for IMT mode with data not in
+          8 quadword multiples, remove PATH3 from arbiter
+          selection if GIF_STAT.M3R/M3P set.
+          
+Thu Jun  4 16:04:23 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * interp.c, sky-dma.c, sky-libvpe.c, sky-vu.[ch]:
+        Added support for the VU insn D (debug) & T (trace) bits.
+
+Tue Jun  2 15:49:48 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sim-main.c (address_translation): Handle k0seg, k1seg 
+        in address translation, rather than via memory aliases.
+        * interp.c (*): New memory config for SKY device.
+
+Mon Jun  1 11:21:41 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (*): Decoupled accurate floating point from
+        5900 floating-point.  New correct sequences for EFU
+        instructions.  Fixed instructions which aren't supposed
+        to change status bits.  Used new pipe_flag_t values for
+        pipeline states.  Use accurate library flags for
+        setting status bits (DIOUSZ).
+        * sky-vpe.h (pipe_flag_t): New type for pipeline states.
+
+Sun May 24 07:01:00 1998  Ron Unrau <runrau@cygnus.com>
+
+        * sky-gdb.c: initial support for VIF FIFO listing
+        * sky-pke.h: export pke_fifo_access
+
+Thu May 13 10:50:01 1998  Patrick Macdonald  <patrickm@cygnus.com>
+        * interp.c: modified name of GIF device
+        * sky-gpuif.[ch]: 
+          1. The queues (three) are now at the front of GIF
+          2. IMT burst mode has been enabled
+          3. Queues with multiple packets will break at packet 
+             boundaries and call the arbiter
+          4. Full arbiter implementation   
+        * sky-gs.c: modified name of GIF device                                
+
+Wed May 13 11:09:15 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sim-main.h, r5900.igen, interp.c: Change operands for
+        --float-type from host|target to fast|accurate.
+        The default is still host/fast.
+
+Mon May 11 12:09:27 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_code_mpg): Fix typo.
+
+Thu May 07 15:11:01 1998  Patrick Macdonald  <patrickm@cygnus.com>
+        
+        * alpha modification roll in ( yummy )
+        * interp.c: added --gs-refreshx, --enable-gs run-time options
+        * sky-gpuif.c: unit test modifications for --gs-refreshx
+        * sky-gpuif.c (gif_write_gs_display_buffer): new function
+        * sky-gpuif.c (gif_call_gs): eliminate duplicate code based
+        on ifdefs
+        * sky-gpuif.c (gif_reglist_mode): mask off NOOP flag if
+        register not A_D or NOOP   
+        * sky-gpuif.c: add logic to support user defined GS 
+        registers / values; altered function prototypes 
+        * sky-gpuif.h: added defines for simulator memory reads and
+        writes; new defines for user defined gs buffers
+        * sky-gs.c (gs_io_write_buffer): only 5 registers are valid
+        * sky-gs.h: only 5 registers are valid
+        * sky-gs.c: added a check for --enable-gs to throw data
+        to stdout instead of GS_PutCtlPort()
+
+Thu May  7 12:15:41 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_pcrel_operand_bits): Compute word-resolution
+        source address for UNPACK into VU MEM.
+        (pke_code_mpg): Ditto for MPG into VU uMEM.
+
+Thu May 7 8:17:08 1998 Ron Unrau <runrau@cygnus.com>
+
+        * sim-main.h: (struct _sim_cpu): add cur_device field.
+          Define cur_device values, breakpoint value, and SIM_ENGINE_HALT_HOOK
+        * interp.c (sim_open): initialize cur_device
+        * sky-engine.c (engine_run): use cur_device to set current_cpu
+        * sky-libvpe.c (vpecallms_cycle): add check for breakpoint
+        * sky-hardware.h: delete NUMBER_CPUS
+        * sky-hardware.c (attach_devices): create a memory mapped comm
+          area for GDB/SIM interactions 
+        * sky-vu.c ({read,write}_vu_misc_reg): do default behavior for
+          unknown regs instead of sim_io_error. MP reg is float (was missing
+          cast).
+
+Wed Apr 29 17:05:08 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sim-main.h, sky-libvpe.c: r59fp_op* functions were called with
+        1st parm of wrong type.  Converted remaining "/" to "FDiv".
+        * interp.c: Make "--float-type host" the default.
+
+Wed Apr 23 17:29:18 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-libvpe.c: Added two missing (& unused) arguments on calls
+        to r59fp_op* functions.
+
+Wed Apr 22 16:49:48 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sim-main.h: Move target specific stuff from sim/common/sim-base.h
+
+Tue Apr 21 17:39:48 1998  Jim Lemke  <jlemke@cygnus.com>
+        * r5900.igen, sim-main.h, sky-libvpe.c: Implement a new run-time
+        option: --float-type host|target.  The sim must first be
+        configured with --with-sky-funit <path>.
+
+Tue Apr 21 17:29:48 1998  Jim Lemke  <jlemke@cygnus.com>
+        * configure.in, interp.c: Add configure option --with-sim-funit.
+
+Mon Apr 20 15:14:35 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gpuif.c (gif_call_gs): open the trace file even
+        when SKY_GPU2 is not defined
+        * sky-gpuif.c (gif_io_read_buffer): remove dead address
+        space check
+        * sky-gpuif.h: add flag defines for GS display buffers
+        * sky-gs.c (gs_io_write_buffer): open the trace file even
+        when SKY_GPU2 is not defined
+
+Thu Apr 16 16:28:24 1998  Ron Unrau <runrau@cygnus.com>
+
+        * sky-gdb.c (vu_option_handler): implement "sim pipe"
+        * sky-inteact.[ch](print_pipe): use sim_io_write
+                (interactive): pass SIM_DESC
+        * sky-vu.c (vu_issue): pass_SIM_DESC
+                (vu_attach): set callback->fdmap/fdopen
+        * sky-libvpe.[ch] (vpecallms_cycle): pass SIM_DESC
+
+Thu Apr 16 15:25:24 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-vu.c (vu0_micro_interlock_clear): New function.
+        * sky-vu.h: Declare it.
+
+Wed Apr 15 15:36:41 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gpuif.c (gif_io_read_buffer): disallow a read of
+        GIF_P3CNT and GIF_P3TAG if not on PATH3 image transfer
+        * sky-gpuif.c (gif_io_write_buffer): better algorithm for
+        setting GIF_STAT.P3Q
+        * sky-gpuif.c (gif_call_gs): check for GIF_REFRESH when
+        SKY_GPU2 not defined
+        
+Wed Apr 15 08:44:01 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gpuif.c (gif_call_gs): skip over NOOP queue rows
+        * sky-gpuif.c (gif_read_tag): correct bit mask for nregs
+        * sky-gpuif.c (gif_consume_path_queue): reset tag read
+        value if the path is not current
+        * sky-gpuif.h: Add define for GIF_PATH_NOOP
+
+Tue Apr 14 15:16:27 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (*): Move interactive stuff out into
+        sky-interact.[ch].  Move indebug into sky-indebug.[ch].
+        * sky-indebug.c (*): New file.  (See above.)
+        * sky-indebug.h (*): New file.  (See above.)
+        * sky-interact.h (*): New file.  (See above.)
+        * sky-interact.c (*): New file.  (See above.) 
+
+        * sky-libvpe.c (vpecallms_cycle): Add conditional call
+        to interactive() to enable VU debugging.
+
+        * sky-vudis.c (*): Added file descriptor parameter to all
+        functions.
+        * sky-libvpe.c (exec_inst): Add stdout to opcode_analyze call.
+        
+        * sky-vu.h (vu_device) : Added console_in, console_out file
+        descriptors.
+        * sky-vu.c (vu_attach) : If $ENV{'VUx_CONSOLE'} fork a console
+        window for vu-debug.
+        * sky-interactive.c (*): Use me->console_in, me->console_out for I/O.
+        * sky-console.c (*): New file.  Supports forked xterm window.
+        * sky-console.h (*): New file. 
+
+        * sky-libvpe.c (*): Clean up upper instruction bursting.
+        Should be a little faster.
+
+Mon Apr 13 16:41:59 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-libvpe.c (*): Use "inst_trace" word in $SKY_DEBUG for pure
+        disassembly, "inst_trace2" for extra details for some
+        instructions.
+
+Thu Apr  9 16:42:54 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (read_pke_pc): Corrected PKE PC calculation
+        to word granularity.
+
+Thu Apr  9 10:30:59 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gpuif.c (gif_partial_queue_write): added function to
+        buffer partial writes to the 3 GIF queues
+        * sky-gpuif.c: modified user reachable asserts to warning
+        messages, updated GIF memory window conditionals, unit test
+        corrections
+        * sky-gpuif.h: added queue buffer and index to path structure,
+        increased GIF memory window to doc specifications
+        * sky-gs.c: completed assert() replacements, updated GS memory
+        window conditionals, unit test corrections
+        * sky-gs.h: increased GS memory window to doc specifications
+
+Wed Apr  8 23:28:14 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (*): Floating point math now done with
+        macros, rather than in-line operations.  Ugly, but a
+        necessary step toward integrating the accurate fp library.
+
+Wed Apr  8 18:13:54 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-vu.c ({read,write}_vu_special_reg): Add CMSAR[01] as special
+        registers for a VU.  Behavior not as mandated.
+        ({read,write}_vu_{misc,special}_reg): Create sim_io_error upon
+        access to unknown register.  Behavior not as mandated.
+
+        * sky-vu.h (anonymous register numbering enum): Add CMSAR[01].
+        
+        * sky-libvpe.c (indebug): Cache $ENV{'SKY_DEBUG'}.
+
+Wed Apr  8 13:00:53 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (*): Split off sky-vudis.[ch].
+        * sky-libvpe.h (*): Also, lots of name changes for GNU style.
+        * sky-vpe.h (*): Name changes.
+        * sky-vu.c (*): Name changes.
+        * sky-vu.h (*): Name changes.
+        * sky-vudis.c (*): New file.  Taken out of sky-libvpe.c.
+        * sky-vudis.h (*): New file.  Taken out of sky-libvpe.c.
+
+Wed Apr  8 12:06:54 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (*): Finished merge of vu_device and 
+        VectorUnitState.  VectorUnitState now RIP.  A bunch
+        of names changed to make them more GNU-ish.
+        * sky-libvpe.h (*): As above.
+        * sky-vu.h (*):  As above.  Added config struct
+        to vu_device.
+        * sky-vu.c (*): As above.  Made a bunch of functions
+        use ANSI protypes.
+
+Tue Apr  7 18:35:02 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-vu.h (vu_device): Represent "macro instruction just stuffed
+        into fetch buffer" condition with new "m" bit.  Rename old "m" to
+        "l".
+        
+        * sky-libvpe.c (indebug): Save snapshot of environment value;
+        workaround for suspected memory corruption.
+        (fetch_inst): Respect new "m" macro-instruction flag for reporting
+        successful fetch to caller.
+        (exec_inst): Disassemble instruction here instead of fetch time.
+        Renamed old "m" -> "l" flag in VU state to track interlock
+        release.
+        (vpecallms_cycle): Call exec_inst only if fetch_inst did some
+        work.
+
+        * sky-vu.c (vu_attach, vu[01]_device): Revamped initialization to
+        ensure complete clear of tail part of struct at attach time.
+        (vu0_busy): Fix thinko.
+        (vu0_macro_issue): Adapt to new "l" flag.
+        (vu0_micro_interlock_released): Ditto.
+        (write_vu_special_reg): Ditto.
+        (read_vu_special_reg): Compute VBS0/VBS1 bits more explicitly.
+        The other VU status bits are not yet computed.
+        
+Mon Apr 6 20:20:20 1988  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gs.c: Replaced ASSERTS with warnings for the time being
+        * sky-gpuif.c: Replaced a few ASSERTS with warnings to allow
+        tests to complete
+        * sky-gs.h: format change
+        * sky-gpuif.h: Added defines for queue data / tags  
+
+Sun Apr 5 12:11:45 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-libvpe.c (exec-inst): Added "M" bit detection for upper
+        instruction.
+
+        * sky-pke.c (pke_check_stall): Added more assertions.
+        (pke_code_mskpath3): Use new GPUIF M3P control register.
+
+        * sky-pke.h (VU[01]_CIA): New macros that give VU CIA
+        pseudo-register addresses.
+
+        * sky-vu.h (vu_device, VectorUnitState): Merged structs.
+        (VectorUnitState.mflag): New field.
+        (VU_REG_{CMSAR0,CMSAR1,FBRST}) Added missing control registers.
+        
+        * sky-vu.c (vu0_busy): New function.
+        (vu0_q_busy): New function.
+        (vu0_macro_issue): New function.
+        (vu0_micro_interlock_released): New function.
+        (vu0_busy_in_{micro,macro}_mode): Deleted stubs.
+        (vu0_macro_hazard_check): Deleted stubs.
+        (vu_attach): Adapted code to merged device & state struct.
+        (read_vu_special_reg): Compute VBS0/VBS1 bits in STAT register.
+        
+Thu Apr 2 13:56:15 1998  Ron Unrau <runrau@cygnus.com>
+
+        * sim-main.h: add vif registers
+        * interp.c: incorporate vif register load/store
+        * sky-pke.[ch]: add register load/store routines
+        * sku-vu.c: P register is float
+
+Thu Apr 2 15:43:43 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gpuif.c: Added first phase of arbiter.  Contains
+        path movement ( no burst interrupts ), register updates,
+        flow modifications.  Not unit tested.
+        * sky-gpuif.c (gif_arbiter): new function 
+        * sky-gpuif.c (gif_reset_stat_path_bits): new function
+        * sky-gpuif.c (gif_determine_active_path): new function
+        * sky-gpuif.c (gif_consume_path_queue): new function
+        * sky-gpuif.h: added first phase of arbiter.
+        
+Wed Apr 1 10:36:15 1998  Ron Unrau <runrau@cygnus.com>
+
+        * sky-vu.[ch]: fix decls, cast floats before transfer
+        * interp.c: integrate vu register read/writes
+        * sim-main.h: track tm-txvu.h
+
+Tue Mar 31 16:44:15 1998  Jim Lemke <jlemke@cygnus.com>
+
+        * sky-dma.c: Clarify text in warning msg.
+        * interp.c: Add global option "float-type".
+        * sky-vu.h: Add SIM_DESC sd; to VectorUnitState for accessing
+        global options.
+
+Mon Mar 30 18:44:15 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-libvpe.c: Code too wide - ran indent on SCEI code.
+
+        * sky-vu.h (vu0_busy*, vu0_macro*): New entry points for COP2
+        interface.
+
+        * sky-vu.c (vu0_busy*, vu0_macro*): Stub functions for above.
+        
+Mon Mar 30 13:42:15 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gs.c (gs_io_write_buffer): completed call to 
+        GS_PutCtlPort() with Toyoshi's input
+        * sky-gs.h: redefined register size to 64 bits
+
+Fri Mar 27 16:34:24 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_code_unpack): Modified unpack behavior again as
+        specified by SCEI.
+
+Fri Mar 27 16:34:24 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-engine.c (engine_run): Adapted from vu[01] -> vu merge.
+
+        * sky-hardware.c (register_devices): Ditto
+
+        * sky-pke.c (pke_fifo_*): Made these functions private again, now
+        that the GPUIF code does not use them.
+
+        * sky-pke.h (pke_fifo_*): Removed newly private declarations.
+
+        * sky-vu.c (*): Major rework: merge of old sky-vu0.c and
+        sky-vu1.c.  Management of two VU devices parallels two PKEs.
+        Work in progress.
+
+        * sky-vu.h (*): Other half of merge.
+        (vu_device): New struct, parallel to pke_device.
+        
+        
+Fri Mar 27 13:20:20 1998 Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gs.c: new file - GS control register mapping
+        * sky-gs.h: new file - GS control register mapping
+        * sky-gpuif.c (gif_io_write_buffer): correct memset length
+        error, renamed gif trace file
+        * sky-hardware.c: add sky-gs to list of devices
+
+Fri Mar 27 7:40:41 1998  Ron Unrau  <runrau@cygnus.com>
+
+        * sky-vu.c: new file
+        * Makefile.in .Sanitize: add sky-vu.c
+        * sky-vu[01].[ch]: use register read/write routines in sky-vu.c
+        * interp.c: use register read/write routines in sky-vu.c
+
+Thu Mar 26 15:40:41 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gpuif.c: added register bodies, new dynamic queues for
+        all 3 paths, fixed minor error, added register for VIF to 
+        update GIF_STAT, eliminated dead register bit code
+        
+        * sky-gpuif.h: new device defines for new queue model, general
+        modifications/additions 
+
+Wed Mar 25 16:46:14 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c: Fixed non-linux builds.  Now checks
+        HAVE_FPU_CONTROL_H and HAVE___SETFPUCW.
+
+Tue Mar 24 20:28:37 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-gpuif.c (gif_packed_mode): Fixed test of ADC bit.  Was
+        testing bit 112.  111 is correct.
+
+Tue Mar 24 18:05:35 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (Lower_special): Fixed a bunch of errors in 
+        hazardchecking.
+        
+        * sky-libvpe.c (*): Cleaned up some dead code left over when
+        the new qpipe handling went in.
+
+Mon Mar 23 17:50:06 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (*): Many fixes, changes and performance enhancements,
+        including many new instruction trace options, and several changes in
+        the pipeline implementation to make it much faster.
+        * sky-gpuif.c (*) : Can now get trace file with GPU2 with GIF_TRACE
+        environment variable.  Refresh every primitive now only under 
+        GIF_REFRESH environment variable.
+        * sky-vpe.h : Pipeline improvements.  Added new enum Instruction. 
+        Changed several pipeline types.  Added new QPIPELINE type.
+        * sky-vu.h : Added new QPIPELINE.
+        * sky-vu1.c (vu1_busy) : New function.
+        * sky-vu1.h (vu1_busy) : New function.
+
+Fri Mar 20 16:52:51 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.h (pke_fifo*): Exported these formerly private functions.
+        (pke_device): Added FIFO cache fields.
+        
+        * sky-pke.c (pke_fifo_reset): New function for GPUIF client -
+        clear FIFO contents.
+        (pke_pcrel_fifo): Added caching facility to prevent O(n^2) cost for
+        searching for consecutive operand words.
+        
+        * sky-libvpe.c (MEM, uMEM): New/changed macros that perform modulo
+        calculations to handle out-of-range VU memory addresses.
+        (*): Replaced many previous uses of MEM[] and state->uMEM[] with
+        calls to above macros.
+
+        * sky-vu.h (struct VectorUnitState): Added qw/dw size fields for 
+        MEM/uMEM buffers, for overflow prevention.  Renamed MEM/uMEM fields
+        to catch all their prior users.
+
+        * sky-vu0.c (vu0_attach): Manually align MEM0/MEM1 buffers to force
+        16-byte alignment.  (zalloc is not enough.)
+
+        * sky-vu1.c (vu1_attach): Ditto.
+        (init_vu): Store buffer sizes from allocation into VectorUnitState.
+
+        * sky-gpuif.h (GifPath): Use a pke_fifo strucf instead of
+        temporary fixed-size array for flexible FIFO sizing.
+        
+        * sky-gpuif.c (SKY_GPU2_REFRESH): This is now an integer value to be
+        used as a modulus for periodic refresh.
+        (refresh): New function to send GPU2 refresh code periodically.
+        (*): Use pke_fifo calls to en/dequeue GPUIF tags & operands.
+
+        * sky-pke.h (struct pke_device): Added fields to allow caching of
+        results from recent FIFO searches.
+
+Wed Mar 18 14:28:22 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_fifo_fit): Be more paranoid about deallocating
+        old FIFO pointer block.
+
+        * sky-gpuif.h: Enlarged temporary FIFO to 64K quadwords for larget
+        SCEI test cases.
+
+Tue Mar 17 19:10:23 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-gpuif.c (call_gs): Call properly into GPU2 library if
+        configured --with-sim-gpu2.  Use SKY_GPU2_REFRESH symbol as
+        placeholder for future GPU2-refresh policy.
+
+Fri Mar 13 20:21:57 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-vu1.c: (dump_mem): Commented out function to satiate
+        warning-ful compilation.
+
+        * sky-pke.c: (pke_reset): New function, called explicitly at
+        initialization and at FBRST.
+        (pke_fifo_flush): New function to flush (skip over) existing
+        quadwords in FIFO.
+        (pke_fifo_fit): New function to add space for new quadword in
+        FIFO.
+        (pke_fifo_access): New function to absolute-index into FIFO.
+        (pke_fifo_old): New function to remove old quadwords from FIFO.
+        (pke_begin_interrupt_stall): New function to abstract
+        interrupt-caused stalls.
+        (pke_*): Access PKE FIFO only thorugh pke_fifo functions.
+        (pke_pcrel_*): Renamed pke_pc_* functions.
+        (pke_code_unpack): Numerous logic tweaks for latest UNPACK
+        behavior changes & clarifications from SCEI.
+        
+        * sky-pke.h (struct pke_fifo): New explicit FIFO representation.
+        (struct pke_device): Use struct above.
+        (PKE_DEBUG): Removed macro as misnomer.
+
+        * sky-hardware.c: Moved *_cmd_install declarations out.
+
+        * sky-hardware.h: Moved *_cmd_install declarations in.
+
+        
+
+Wed Mar 11 14:17:25 1998  Andrew Cagney  <cagney@b1.cygnus.com>
+
+        * sky-dma.c (do_dma_transfer): Replace sim_core_*_map with
+        read_map, write_map, exec_map resp.
+
+        * sky-libvpe.c (get_TOP): Ditto.
+        (gif_write): Ditto.
+
+        * sky-pke.h (PKE_MEM_READ, PKE_MEM_WRITE): Ditto.
+
+Wed Mar 11 22:06:34 1998  Andrew Cagney  <cagney@b1.cygnus.com>
+
+        * sky-gdb.c (vu_option_handler): Delete unused local unit.
+        (log_option_handler): Delete extra arg from printf, twice.
+
+        * sky-pke.c (config.h): Include.
+        (string.h, strings.h): Include.
+        (pke_issue): Delete unused locals imm, num
+        
+        * sky-libvpe.c: Pacify GCC.
+
+        * sky-gpuif.c (gif_io_write_buffer): Pacify GCC.
+
+        * sky-dma.c (config.h): Include.
+        (string.h, strings.h): Include.
+        (dma_io_read_buffer): Pacify GCC.
+        (dma_io_write_buffer): Pacify GCC.  Initialize pmem before first
+        use.
+        (do_dma_transfer): Delete unused local variables qwbuf and local.
+
+Fri Mar  6 14:52:16 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_issue): Revamped interrupt & stall code.  Assume
+        that ER1/ER0/PIS bits are only set if not masked by ERR bits.
+        Signal PIS only if unmasked.
+        (pke_code_error): Signal ER1 only if unmasked.
+        (pke_pc_fifo): Signal ER0 only if unmasked.
+        (pke_code_unpack): Round up num_operands for last operand's
+        partial-word.  Factor out "R" bit handling for better coverage
+        analysis.  Fill upper words of a quadword with zeroes for Vn_m
+        UNPACK with n < 4.
+        
+        * sky-device.c (device_error): Made function accept varargs.
+
+        * sky-device.h (device_error): Changed declaration to match.
+
+        * interp.c (sim_open): Made 0x0000 area memory be an alias of
+        the K0/K1 segments.  Sanitized code.
+
+Thu Mar  5 14:57:37 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_flip_dbf): Fixed macro use drain bamage.
+
+Wed Mar  4 18:31:53 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * interp.c (sim_open): Map 4M of memory at zero for SKY sim only.
+
+Wed Mar  4 14:11:53 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_issue): Move interrupt-handling into decode logic.
+        (pke_code_*): Remove duplicated interrupt-handling code.
+
+Mon Mar  2 18:49:59 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-vu1.c (vu1_io_write_register_window): Make CIA (pc) write
+        effective by updating more registers.
+
+        * sky-libvpe.c: Updated to match earlier VU state-change code.
+
+        * sky-vpe.h: Removed unused globals from declarations.
+
+Fri Feb 26 16:45:45 1998  Jim Lemke <jlemke@cygnus.com>
+
+        * sky-dma.c (do_dma_transfer_tag): Copy part of current tag
+        to the upper 16-bits of Dn_CHCR.
+
+Fri Feb 27 16:38:22 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_io_{read,write}_buffer): Endianness fixes aka
+        "E-fixes" in register and FIFO read/writes.
+        (pke_code_{pkemscalf,pkemscal}): E-fixes in VU CIA setting.
+        (pke_code_{mpg,unpack}): E-fixes in VU memory & tracking updates.
+        (pke_code_direct): E-fixes in GPUIF FIFO stuffing.
+
+        * sky-pke.h (PKE_MEM_WRITE): E-fixes in trace file writing.
+
+        * sky-vu0.c (vu0_attach): Allocate micro/data memory with zalloc
+        to guarantee sufficient (16-byte) alignment.
+
+        * sky-vu1.c (vu1_attach): Ditto.
+        (vu1_io_read_register_window): *PARTIAL* E-fixes in register accesses.
+
+        * sky-libvpe.c (gif_write): E-fixes in GPUIF FIFO stuffing.
+
+        * sky-gpuif.c (gif_io_{read,write}_buffer): E-fixes in
+        register and FIFO read/writes.
+
+        * sky-dma.c (do_dma_transfer_tag): E-fixes in tag reading.
+
+        
+
+Fri Feb 26 14:45:45 1998  Patrick Macdonald <patrickm@cygnus.com>
+
+        * sky-gpuif.c: Various unit test updates and GS lib additions
+        * sky-gpuif.h: Various unit test updates
+
+Wed Feb 24 14:32:44 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-dma.c (dma_io_write_buffer): Warning msg req_act_msg
+        mistakenly specified the reg address as a long long.
+
+Wed Feb 25 14:28:22 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.h (PKE_FLAG_INT_NOLOOP): Added device flag to indicate
+        presence of stalled & interrupted PKEcode.
+
+        * sky-pke.c (pke_issue): Added PKEcode interrupt bit handling.
+        (pke_flip_dbf): Changed double-buffering logic to match SCEI
+        clarification.
+        (pke_code_*): Added interrupt bit stalling clause.
+        (pke_code_pkems*): Added ITOP/ITOPS transmission code.
+        (pke_code_unpack): Added more careful logic for processing
+        overflows of VU data memory addresses.
+
+Wed Feb 24 12:02:44 1998  Jim Lemke  <jlemke@cygnus.com>
+        
+        * sky-dma.[ch]: Insufficient space allocated for the control regs.
+        DMA_Dn_MAX_CHANNEL ==> DMA_Dn_NUM_CHANNELS
+
+Tue Feb 24 20:02:44 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_code_mskpath3): Use temporary cheat for PATH3
+        masking.
+        (pke_code_mpg): Correct VU uMEM address calculations.
+
+Tue Feb 24 19:02:39 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (GpuIfKick): Fix word ordering some more.
+
+Tue Feb 24 18:44:23 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-gpuif.c (gif_io_write_buffer): Change case label
+        to expect 16-byte write (not 128-byte write).
+
+Tue Feb 24 18:25:05 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (fetch_inst): Fix upper/lower word ordering.
+        (fetch_inst): Fix word ordering.
+        (GpuIfKick): Fix word ordering.
+        
+        *sky-pke.c (pke_flip_dbf): Put things in an order which makes
+        the sample work.  Don't know if this is correct or not.
+
+Tue Feb 24 15:05:15 1998  Patrick Macdonald <patrickm@cygnus.com>
+
+        * sky-gpuif.c: numerous internal modifications due to unit test
+        * sky-gpuif.h: add a few defines due to unit test
+        
+
+Mon Feb 23 20:58:53 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.h (PKE_MEM_READ): Removed "read" entry from FIFO trace.
+
+        * sky-pke.c (pke_attach): Set trace file to line buffering iff
+        open.
+        (pke_io_read_buffer, pke_io_write_buffer): Handle erroneous
+        reads/writes by zero-padding.
+        (pke_io_write_buffer): Switch to more bit-field definition macros.
+        (pke_issue): Remove "stalled" entry from FIFO trace.
+        (pke_pc_advance): Correct logic for DMA-tag-skipping, PKEcode
+        classification.
+        (pke_code_mskpath3): Sketch of possible PATH3 masking method.
+        (pke_code_mpg): Keep order of lower/upper VU words as supplied.
+        (pke_code_unpack): Logic change for wl/cl/num unpacking.  Weird.
+        
+
+Mon Feb 23 20:10:57 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-dma.c (do_dma_transfer_tag, do_dma_transfer):
+        Use sim_core_[read|write]_aligned_16 instead of sim_[read|write].
+
+Fri Feb 20 18:49:57 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke1_issue): Issue on correct PKE device.
+        (pke_io_write_buffer, pke_code_mpg, pke_code_unpack): Perform more
+        endian conversions.
+        (pke_code_mpg, pke_code_direct): Add operand alignment assertions.
+        (pke_code_mpg): Correct VU stall checks.  Correct VU opcode
+        transfer ordering.
+        (pke_code_direct): Correct typos in DIRECT operand accessing.
+        (pke_code_unpack): Correct conditional sign-extension handling.
+
+        * sky-gpuif.c (gif_io_read_buffer, gif_io_write_buffer): Correct
+        assertion polarity.
+        (gif_read_tag): Disable faulty DMA-tag testing code.
+
+        
+
+Fri Feb 20 13:41:43 1998  Jim Lemke  <jlemke@cygnus.com>
+
+        * sky-dma.h add additional defines.
+        * sky-dma.c initial coding & unit test complete, all function
+        has been implemented.
+
+Thu Feb 19 20:41:43 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.h (PKE_MEM_READ, PKE_MEM_WRITE, PKE_REG_MASK_SET): Add
+        trace file records.
+
+        * sky-pke.c: (pke_track_write): Removed function.  Replaced with
+        in-line modifications to VU tracking tables.
+        (pke_attach): Attach VU tracking tables.  Use line buffering on
+        trace files.
+        (pke_issue): Spit out additional trace records.
+        (pke_pc_operand_bits): Correct bitfield masking error.
+        (*): Replace sim_read/write with kludge PKE_MEM_READ/WRITE
+        throughout.
+        (pke_code_unpack): Correct numerous small bugs in operand decoding
+        etc.
+
+Wed Feb 18 16:13:54 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_issue): Take extra SIM_DESC argument.
+        (pke_attach): Attach correct PKE0/PKE1 device.  Open trace file if
+        VIF{0,1}_TRACE_FILE env. var. is defined.
+        (pke_io_write_buffer): Classify words in FIFO quadword.  Use
+        kludgey sim_core routines to access DMA registers.
+        (pke_pc_advance): Add PKEcode classification.  Correct DMA tag
+        skipping.  Emit trace records.
+        (pke_pc_fifo): Add PKEcode operand classification.
+        (pke_check_stall): Perform stall checks against updated register
+        scheme.
+        (pke_code_unpack): Correct operand-count calculation.
+        (pke_code_stmask): Correct instruction skipping.
+
+        * sky-pke.h (PKE_MEM_WRITE, PKE_MEM_READ): New kludge macros.
+        (BIT_MASK_BTW): Corrected off-by-one error.
+        (enum wordclass): Classify words in a FIFO quadword.
+
+        * sky-dma.c (dma_io_read_buffer): Correct address checking assertions.
+
+        * sky-engine.c (engine_run): Pass along SIM_DESC to PKE
+        instruction issue code.
+
+
+Wed Feb 18 12:48:32 1998  Patrick Macdonald  <patrickm@cygnus.com>
+
+        * sky-gpuif.c(*): reverted and updated old version
+        * sky-gpuif.h: updates to structs and constants
+        * sky-hardware.c(register_devices): call gif_attach
+
+Wed Feb 18 12:13:54 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c(gif_write): Change word ordering to match
+        correct values.
+
+Tue Feb 17 18:47:37 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-gpuif.c(*): Misc minor fixes.
+        * sky-libvpe.c(*): XGKICK now uses memory-based GIF FIFO.
+        * sky-vu1.c(*): Default behaviour to memory-based GIF FIFO.
+
+Mon Feb 16 17:04:43 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * Add VU1_CIA register with magic start-run semantics.
+
+Mon Feb 16 16:42:33 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * Change VPE_STAT to match new hardware spec.  Currently
+        * only partially implemented.
+
+Sat Feb 14 00:25:59 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-libvpe.c (*): Move vu1 state into struct.  Add
+        host-target endian twiddling support.
+        * sky-libvpe.h (*): Move vu1 state into struct.
+        * sky-vpe.h (*): Move vu1 state into struct.
+        * sky-vu.h (*): Move vu1 state into struct.
+        * sky-vu1.c (*): Move vu1 state into struct.
+
+        * And a whole bunch of other fixes.
+
+Fri Feb 13 18:06:16 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_pc_operand_bits): New function for reading
+        operand words, bit by bit.
+        (pke_code_unpack): Complete unpack function.
+        (pke_issue): New STAT:PSS handling - halts after current PKE
+        instruction.
+        (pke_check_stall): New stall checks per CPU2 spec update.
+
+        * sky-pke.h (struct pke_device): Added FIFO port write buffer.
+        (*_START): Changed memory addresses per CPU2 spec update.
+
+
+Fri Feb 13 12:54:00 1998  Patrick Macdonald <patrickm@cygnus.com>
+
+        * sky-gpuif.h: first functional drop (spec)
+        * sky-gpuif.c: first functional drop (spec)
+        
+Wed Feb 11 18:15:00 1998  Jim Lemke <jlemke@cygnus.com>
+
+        * Correct the DMA register addresses
+
+Wed Feb 11 14:26:29 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.c (pke_issue): Process each instruction in subfunction.
+        (pke_code_*): Added one new function for each PKE instruction.
+        (pke_pc_operand, pke_pc_fifo, pke_pc_advance): Skip over DMA tags
+        and possibly signal ER0.
+        (general): Incorporate changes due to clarification messages
+        #1,2,4.
+
+        * sky-pke.h (PKE_REG_STAT_*): New STALL alias for DECODE state.
+        
+Tue Feb 10 15:04:31 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * Many changes to make --enable-sim-warnings work.
+
+Mon Feb  9 19:10:32 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * sky-vu1.c: Make "vu.bin" optional file.
+
+Mon Feb  9 18:11:18 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * configure.in: Added -DWITH_DEVICES, -DDEVICE_INIT.
+        * interp.c: Calls hardware_init if DEVICE_INIT defined.
+
+Fri Feb  6 11:46:08 1998  Frank Ch. Eigler  <fche@cygnus.com>
+
+        * sky-pke.h: Filled in headers for structures, many bit
+        manipulation macros, register bit masks, etc.
+
+        * sky-pke.c: Filled in body for most functions.
+
+        * sky-engine.c (engine_run): Adapted code to SMP/igen
+        conventions.
+
+Thu Feb  5 19:16:38 1998  Doug Evans  <devans@canuck.cygnus.com>
+
+        * Makefile.in (SIM_SKY_OBJS,MIPS_EXTRA_OBJS): New vars.
+        (SIM_OBJS): Add $(MIPS_EXTRA_OBJS).  * configure.in: Set
+        mips_extra_objs to sky files if mips64r59*-sky-*.  * configure:
+        Regenerated.
+
+Tue Jan 27 18:24:01 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * Very, very early support for vu1 based on sce code.
+
+Thu Jan 22 15:44:46 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * Incorporate GPR_SET from mips/sim-main.h.
+
+Fri Jan 16 14:25:54 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * Devices now get decode() call.
+
+Fri Jan 16 14:25:54 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * Initial Device Support.
+
+Thu Jan 15 10:25:54 1998  Ian Carmichael  <iancarm@cygnus.com>
+
+        * ChangeLog created.
